@@ -1,0 +1,57 @@
+﻿26.03.2020 - version 1.0.0 - Updated with fix for userTypes
+28.03.2020 - version 1.0.1 - Added generated userId to status message in SOFD Core GUI
+                             fixed bug in Attribute Writeback that caused a FULL sync every 5 minutes
+29.03.2020 - version 1.0.2 - Added -Confirm:$false to Disable-Mailbox commands for Exchange
+02.04.2020 - version 1.0.3 - Fixed typo in log message, and fixed folder-location of ad-mapping.xml
+03.04.2020 - version 1.0.4 - Changed behaviour regarding EmployeeID field, allowing it to be set even for non-singleUser cases
+22.04.2020 - version 1.1.0 - Allow uploading local configuration to SOFD Core
+12.06.2020 - version 1.2.0 - Supports fixed-size userIds
+25.06.2020 - version 1.2.1 - Fixed bug in new username generator
+30.06.2020 - version 1.2.2 - Support accounts with dash-cprs for reactivation
+24.07.2020 - version 1.2.3 - Supports any phone type
+04.08.2020 - version 1.2.4 - Sends EmailAlias to Exchange Powershell scripts
+06.08.2020 - version 1.3.0 - Quickfixes for Exchange and OPUS username generation (temporary, until a longterm solutation is made)
+07.08.2020 - version 1.3.1 - Setting Alias and EmailPolicy when enabling remote mailbox
+14.08.2020 - version 1.3.2 - Fixed powershell pipeline bug when creating exchange mailbox
+27.08.2020 - version 1.3.3 - Bugfix til email adressen i OPUS mail udsendelse
+28.08.2020 - version 1.3.4 - Additional logging when failing to generate username
+03.09.2020 - version 1.3.5 - Changed to 64bit. Can now use PSSnapin when connecting to Exchange.
+28.09.2020 - version 1.3.6 - Added quickfix to EmployeeID matching issue for reactivating AD accounts
+29.09.2020 - version 1.4.0 - Implementation af ny navnestandard (kræver at SOFD Core også opdateres)
+21.10.2020 - version 1.4.1 - Supports concat() for attribute writeback
+10.11.2020 - version 1.5.0 - Supports maintaining AD manager attribute
+11.12.2020 - version 1.5.1 - Support for unilogin mapping in writeback
+14.12.2020 - version 1.5.2 - Fixed bug in ExchangeService that caused powershell sessions to not be released properly
+02.02.2021 - version 1.5.3 - Fixed bug when writing same sofd value to multiple ad Attributes. Added support for tags when writing to AD attributes.
+04.02.2021 - version 1.5.4 - Fixed inheritance bug in tag mapping
+22.02.2021 - version 1.6.0 - Support for only running powershells on Exchange create/delete
+24.02.2021 - version 1.6.1 - Fixed NPE exception when user has no prime affiliation. Removed ExchangeServer property requirement when running with ExchangeOnlyPowershell=true.
+05.03.2021 - version 1.6.2 - Added suport for phonetypes. Added left and right function to writeback dsl
+10.03.2021 - version 1.6.3 - Added static method to writeback dsl. Added accountExpires handling to writeback
+12.03.2021 - version 1.6.4 - Fixed bug when invoking DeactivateExchange Powershell
+15.03.2021 - version 1.6.5 - Fixed bug in tag dsl
+19.03.2021 - version 1.6.6 - Fixed Manager bug. Added OU exclusion configuration to writeback.
+23.03.2021 - version 1.6.7 - Fixed OU exclusion bug. Added Manager master filter.
+25.03.2021 - version 1.6.8 - Added prefix method to writeback dsl.
+19.04.2021 - version 2.0.0 - Forward DC to local powershell scripts
+                             Support setting AccountExpiry order types
+                             Rewrite of Exchange integration to powershell
+19.05.2021 - version 2.1.0 - Support TLS 1.2
+20.05.2021 - version 2.1.1 - Fix issue with userAccountControl flag
+02.06.2021 - version 2.1.2 - Fix bug that caused powershell failures to indicate success
+02.06.2021 - version 2.1.3 - Fix in powershell runner handling return statements
+03.06.2021 - version 2.1.4 - DisableExchange now clears the mail attribute in AD
+07.06.2021 - version 2.1.5 - Added versioning fixes
+14.06.2021 - version 2.1.6 - EnableMailboxRemote now finds a DomainController before enabling mailbox
+16.06.2021 - version 2.1.7 - EnableMailboxRemote now finds a DomainController before setting mailbox
+09.07.2021 - version 2.1.8 - Updated sample powershell scripts to show $DC parameter - and fixed configuration upload
+03.11.2021 - version 2.1.9 - Added option to choose between Exchange and AD as source for UserPrincipalName attribute
+20.12.2021 - version 2.1.10 - When enabling a remote mailbox on a user with usertype RemoteUserMailbox, the existing mailbox is now disabled first
+22.12.2021 - version 2.2.0 - Support SUBSTITUTE (vikar) affiliationTypes (required for using the vikar-modul in SOFD Core)
+18.01.2022 - version 2.2.1 - Fixed a bug that prevented ad account deletion if the user object had child objects in AD
+27.01.2022 - version 2.2.2 - Can now use BOTH as UPNChoice setting. Changed the way remote mailboxes are disabled.
+28.03.2022 - version 2.3.0 - Can now exclude OUs when checking for existing AD accounts
+19.04.2022 - version 2.4.0 - Can now configure job execution time in config file
+18.05.2022 - version 2.4.1 - Added error logging when disabling account fails
+19.05.2022 - version 2.4.2 - Fixed null pointer exception when disabling accounts
+03.10.2022 - version 2.4.3 - Fixed syntax bug in disableMailboxOnPremise.ps1

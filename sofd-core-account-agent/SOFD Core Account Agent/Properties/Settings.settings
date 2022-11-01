@@ -1,0 +1,99 @@
+﻿<?xml version='1.0' encoding='utf-8'?>
+<SettingsFile xmlns="http://schemas.microsoft.com/VisualStudio/2004/01/settings" CurrentProfile="(Default)" GeneratedClassNamespace="SOFD.Properties" GeneratedClassName="Settings">
+  <Profiles />
+  <Settings>
+    <Setting Name="SofdUrl" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">https://kommune.sofd.io</Value>
+    </Setting>
+    <Setting Name="SofdApiKey" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">xxxx</Value>
+    </Setting>
+    <Setting Name="ExchangeCreateEnabled" Type="System.Boolean" Scope="Application">
+      <Value Profile="(Default)">False</Value>
+    </Setting>
+    <Setting Name="ExchangeDeactivateEnabled" Type="System.Boolean" Scope="Application">
+      <Value Profile="(Default)">False</Value>
+    </Setting>
+    <Setting Name="ExchangeOnlyPowershell" Type="System.Boolean" Scope="Application">
+      <Value Profile="(Default)">False</Value>
+    </Setting>
+    <Setting Name="ExchangeServer" Type="System.String" Scope="Application">
+      <Value Profile="(Default)" />
+    </Setting>
+    <Setting Name="ExchangeDefaultMailDomain" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">@kommune.dk</Value>
+    </Setting>
+    <Setting Name="ExchangeUsePSSnapin" Type="System.Boolean" Scope="Application">
+      <Value Profile="(Default)">False</Value>
+    </Setting>
+    <Setting Name="ExchangeCustomMailDomains" Type="System.String" Scope="Application">
+      <Value Profile="(Default)" />
+    </Setting>
+    <Setting Name="ExchangeOnline" Type="System.Boolean" Scope="Application">
+      <Value Profile="(Default)">False</Value>
+    </Setting>
+    <Setting Name="ExchangeOnlineMailDomain" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">@kommune.mail.onmicrosoft.com</Value>
+    </Setting>
+    <Setting Name="ExchangeCreatePowershell" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">Exchange\createExchange.ps1</Value>
+    </Setting>
+    <Setting Name="ExchangeDeactivatePowershell" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">Exchange\deactivateExchange.ps1</Value>
+    </Setting>
+    <Setting Name="ActiveDirectoryEnableAccountCreation" Type="System.Boolean" Scope="Application">
+      <Value Profile="(Default)">False</Value>
+    </Setting>
+    <Setting Name="ActiveDirectoryEnableAccountDeactivation" Type="System.Boolean" Scope="Application">
+      <Value Profile="(Default)">False</Value>
+    </Setting>
+    <Setting Name="ActiveDirectoryEnableAccountDeletion" Type="System.Boolean" Scope="Application">
+      <Value Profile="(Default)">False</Value>
+    </Setting>
+    <Setting Name="ActiveDirectoryEnableAccountExpire" Type="System.Boolean" Scope="Application">
+      <Value Profile="(Default)">True</Value>
+    </Setting>
+    <Setting Name="ActiveDirectoryAttributeCpr" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">employeeId</Value>
+    </Setting>
+    <Setting Name="ActiveDirectoryAttributeEmployeeId" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">employeeNumber</Value>
+    </Setting>
+    <Setting Name="ActiveDirectoryUserOU" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">OU=Users,DC=kommune,DC=dk</Value>
+    </Setting>
+    <Setting Name="ActiveDirectoryCreatePowershell" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">ActiveDirectory\createUser.ps1</Value>
+    </Setting>
+    <Setting Name="ActiveDirectoryDeactivatePowershell" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">ActiveDirectory\disableUser.ps1</Value>
+    </Setting>
+    <Setting Name="ActiveDirectoryDeletePowershell" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">ActiveDirectory\deleteUser.ps1</Value>
+    </Setting>
+    <Setting Name="ActiveDirectoryInitialPassword" Type="System.String" Scope="Application">
+      <Value Profile="(Default)" />
+    </Setting>
+    <Setting Name="UploadConfiguration" Type="System.Boolean" Scope="Application">
+      <Value Profile="(Default)">False</Value>
+    </Setting>
+    <Setting Name="UPNChoice" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">EXCHANGE</Value>
+    </Setting>
+    <Setting Name="DefaultUPNDomain" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">@kommune</Value>
+    </Setting>
+    <Setting Name="AlternativeUPNDomains" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">185af372-5f79-42f9-8578-b91f20adf6fb=@domain1;a34dc2c4-97bd-42ec-a9fb-42d31c2f21bb=domain2</Value>
+    </Setting>
+    <Setting Name="ExistingAccountExcludeOUs" Type="System.String" Scope="Application">
+      <Value Profile="(Default)" />
+    </Setting>
+    <Setting Name="ActiveDirectoryJobCron" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">0 0-59/5 * ? * *</Value>
+    </Setting>
+    <Setting Name="ExchangeJobCron" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">0 1-59/5 * ? * *</Value>
+    </Setting>
+  </Settings>
+</SettingsFile>
