@@ -1,0 +1,20 @@
+## [Version 1.0.0] - No changelog
+## [Version 1.0.1] - 2020-01-15 - Added changelog, Connections to Active Directory using LDAP can now request signing.
+## [Version 1.0.2] - 2020-01-24 - Support for Mobile and SecretMobile
+## [Version 1.1.0] - 2020-04-04 - Simplified configuration, Improved backend integration
+## [Version 1.2.0] - 2020-04-09 - Send "days to next password change" to SOFD
+## [Version 1.3.0] - 2020-04-23 - Support uploading local config to SOFD
+## [Version 1.4.0] - 2020-05-22 - Support reading AD data from file instead of AD
+## [Version 1.5.0] - 2020-06-05 - Support photos from AD
+## [Version 1.5.1] - 2020-10-14 - AD Sync interval is now a configurable cron expresssion
+## [Version 1.6.0] - 2021-04-19 - Send AccountExpire information to SOFD Core
+## [Version 1.7.0] - 2021-05-19 - Use TLS 1.2
+## [Version 1.7.1] - 2021-06-02 - Fixed issue with Expiry on Deleted accounts
+## [Version 1.7.2] - 2021-06-04 - Now sends ClientVersion header to backend api
+## [Version 1.7.3] - 2021-06-07 - Fixed versioning setup
+## [Version 1.8.0] - 2021-06-28 - Reads LockoutTime
+## [Version 1.8.1] - 2021-06-28 - Fixed NPE when checking for account lockout
+## [Version 1.8.2] - 2021-12-17 - Can now Exclude OUs
+## [Version 1.9.0] - 2022-03-07 - Support DepartmentNumber and FaxNumber on AD accounts
+## [Version 1.9.1] - 2022-04-20 - Fixed bug when reading lastpwdset from deltasync
+## [Version 2.0.0] - 2022-10-24 - Support reading UPN into SOFD

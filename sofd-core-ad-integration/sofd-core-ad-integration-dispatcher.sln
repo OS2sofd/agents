@@ -1,0 +1,28 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.28803.352
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SOFDCoreAD.Service", "SOFDCoreAD.Service\SOFDCoreAD.Service.csproj", "{2AA90D2E-793E-4CBA-A56E-08B848429357}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Local|Any CPU = Local|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{2AA90D2E-793E-4CBA-A56E-08B848429357}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2AA90D2E-793E-4CBA-A56E-08B848429357}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2AA90D2E-793E-4CBA-A56E-08B848429357}.Local|Any CPU.ActiveCfg = Local|Any CPU
+		{2AA90D2E-793E-4CBA-A56E-08B848429357}.Local|Any CPU.Build.0 = Local|Any CPU
+		{2AA90D2E-793E-4CBA-A56E-08B848429357}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2AA90D2E-793E-4CBA-A56E-08B848429357}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {2D72561E-BB05-469E-AE16-2064EBBE91F7}
+	EndGlobalSection
+EndGlobal
