@@ -1,0 +1,39 @@
+﻿<?xml version='1.0' encoding='utf-8'?>
+<SettingsFile xmlns="http://schemas.microsoft.com/VisualStudio/2004/01/settings" CurrentProfile="(Default)" GeneratedClassNamespace="SOFD.Properties" GeneratedClassName="Settings">
+  <Profiles />
+  <Settings>
+    <Setting Name="SofdUrl" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">https://kommune.sofd.io</Value>
+    </Setting>
+    <Setting Name="SofdApiKey" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">xxxx</Value>
+    </Setting>
+    <Setting Name="ActiveDirectoryUserType" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">ACTIVE_DIRECTORY</Value>
+    </Setting>
+    <Setting Name="UploadConfiguration" Type="System.Boolean" Scope="Application">
+      <Value Profile="(Default)">False</Value>
+    </Setting>
+    <Setting Name="ActiveDirectoryEnableManagerUpdate" Type="System.Boolean" Scope="Application">
+      <Value Profile="(Default)">False</Value>
+    </Setting>
+    <Setting Name="ActiveDirectoryWritebackExcludeOUs" Type="System.String" Scope="Application">
+      <Value Profile="(Default)" />
+    </Setting>
+    <Setting Name="ActiveDirectoryManagerUpdateMasters" Type="System.String" Scope="Application">
+      <Value Profile="(Default)" />
+    </Setting>
+    <Setting Name="ActiveDirectoryEnablePowershell" Type="System.Boolean" Scope="Application">
+      <Value Profile="(Default)">False</Value>
+    </Setting>
+    <Setting Name="ActiveDirectoryManagerUpdateOnlyPrimes" Type="System.Boolean" Scope="Application">
+      <Value Profile="(Default)">True</Value>
+    </Setting>
+    <Setting Name="EnableFallbackToPrimeAffiliation" Type="System.Boolean" Scope="Application">
+      <Value Profile="(Default)">True</Value>
+    </Setting>
+    <Setting Name="ActiveDirectoryManagerUpdateNoClear" Type="System.Boolean" Scope="Application">
+      <Value Profile="(Default)">False</Value>
+    </Setting>
+  </Settings>
+</SettingsFile>

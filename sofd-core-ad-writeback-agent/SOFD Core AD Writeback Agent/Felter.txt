@@ -1,0 +1,147 @@
+direkte attributter (fx sofd="firstname")
++----------------------------+-------------------------------------------------------+
+| Field                      | Beskrivelse                                           |
++----------------------------+-------------------------------------------------------+
+| uuid                       | Det officielle UUID                                   |
+| cpr                        | CPR-nummer                                            |
+| firstname                  | Fornavn                                               |
+| surname                    | Efternavn                                             |
+| chosenName                 | Kaldenavn                                             |
+| name                       | fornavn plus efternavn                                |
+| firstEmploymentDate        | Første ansættelsesdato                                |
+| anniversaryDate            | Jubilæumsdato                                         |
+| registeredPostAddress      | Registreret adresse                                   |
+| residencePostAddress       | Bopælsadresse                                         |
+| phones                     | Liste af telefoner                                    |
+| users                      | Liste af brugere                                      |
+| affiliations               | Liste af ansættelser                                  |
+| created                    | Dato for oprettelse af personen                       |
+| lastChanged                | Dato for sidste ændring af personen                   |
+| deleted                    | Om personen er slettet                                |
++----------------------------+-------------------------------------------------------+
+
+post (fx sofd="affiliation.orgUnit.post.street" for enhedens adresse eller sofd="post.street" for medarbejderens hjemmeadresse)
++----------------------------+-------------------------------------------------------+
+| Field                      | Beskrivelse                                           |
++----------------------------+-------------------------------------------------------+
+| id                         | Adressens id                                          |
+| master                     | Hvor adressen kommer fra                              |
+| masterId                   | ID på stedet hvor adressen kommer fra                 |
+| street                     | Gade                                                  |
+| localname                  | Lokalt navn                                           |
+| postalCode                 | Post nr.                                              |
+| city                       | By                                                    |
+| country                    | Land                                                  |
+| addressProtected           | Adressebeskyttet                                      |
+| prime                      | Primær adresse                                        |
++----------------------------+-------------------------------------------------------+
+
+phone (fx sofd="phone.phoneNumber")
++----------------------------+-------------------------------------------------------+
+| Field                      | Beskrivelse                                           |
++----------------------------+-------------------------------------------------------+
+| id                         | Telefonens id                                         |
+| master                     | Hvor telefonen kommer fra                             |
+| masterId                   | ID på stedet hvor telefonen kommer fra                |
+| phoneNumber                | Telefonnummer                                         |
+| phoneType                  | Telefonens type                                       |
+| prime                      | Primær telefon                                        |
+| typePrime                  | Primær telefon af den type                            |
++----------------------------+-------------------------------------------------------+
+
+user (fx sofd="user.userId")
++----------------------------+-------------------------------------------------------+
+| Field                      | Beskrivelse                                           |
++----------------------------+-------------------------------------------------------+
+| id                         | Brugerens id                                          |
+| master                     | Hvor telefonen kommer fra                             |
+| masterId                   | ID på stedet hvor telefonen kommer fra                |
+| userId                     | Brugerid                                              |
+| userType                   | Brugertype                                            |
+| employeeId                 | MedarbejderID                                         |
+| prime                      | Primær telefon                                        |
++----------------------------+-------------------------------------------------------+
+
+affiliation (fx sofd="affiliation.stopDate")
++----------------------------+-------------------------------------------------------+
+| Field                      | Beskrivelse                                           |
++----------------------------+-------------------------------------------------------+
+| uuid                       | Ansættelsens UUID                                     |
+| master                     | Hvor ansættelsen kommer fra                           |
+| masterId                   | ID på stedet hvor ansættelsen kommer fra              |
+| prime                      | Primær ansættelse                                     |
+| startDate                  | Start dato                                            |
+| stopDate                   | Stop dato                                             |
+| deleted                    | Om ansættelsen er slettet                             |
+| orgUnitUuid                | UUID på enheden som ansættelsen er knyttet til        |
+| employeeId                 | MedarbejderID                                         |
+| employmentTerms            | Ansættelsesforholdskode (fx 01, 02, osv)              |
+| employmentTermsText        | Ansættelsesforhold (månedslønnet, timelønnet, osv)    |
+| payGrade                   | Lønklasse                                             |
+| workingHoursDenominator    |                                                       |
+| workingHoursNumerator      |                                                       |
+| affiliationType            | Ansættelsestype                                       |
+| positionId                 | ID på stillingen                                      |
+| positionName               | Stillingstekst                                        |
+| positionDisplayName        | Display stillingstekst                                |
+| positionCalculatedName     | Displaytekst hvis angivet, ellers alm. stillingstekst |
+| functions                  | Liste af ansættelsesfunktioner                        |
++----------------------------+-------------------------------------------------------+
+
+affiliation.orgUnit (fx sofd="affiliation.orgUnit.cvr")
++----------------------------+-------------------------------------------------------+
+| Field                      | Beskrivelse                                           |
++----------------------------+-------------------------------------------------------+
+| uuid                       | Enhedens UUID                                         |
+| master                     | Hvor enheden kommer fra                               |
+| masterId                   | ID på stedet hvor enheden kommer fra                  |
+| deleted                    | Om enheden er slettet                                 |
+| created                    | Dato for oprettelse af enheden                        |
+| lastChanged                | Dato for sidste ændring af enheden                    |
+| shortname                  | Kaldenavn kort fra LOS                                |
+| name                       | Navnet på enheden                                     |
+| displayName                | Navnet der bliver vist                                |
+| cvrName                    | CVR navn svarende til enhedens P-nummer               |
+| cvr                        | CVR                                                   |
+| ean                        | EAN                                                   |
+| senr                       | SE-nummer                                             |
+| pnr                        | P-nummer                                              |
+| manager                    | Enhedens leder                                        |
+| costBearer                 |                                                       |
+| orgType                    | Enhedens type                                         |
+| orgTypeId                  | Enhedens types ID                                     |
+| postAddresses              | Liste af adresser                                     |
+| phones                     | Liste af telefoner                                    |
+| emails                     | Liste af emails                                       |
+| parentUuid                 | Enhedens forældres UUID                               |
+| parent                     | Forældreenheden                                       |
+| tags                       | Liste af tags                                         |
++----------------------------+-------------------------------------------------------+
+
+affiliation.orgUnit.manager (fx sofd="affiliation.orgUnit.manager.name")
++----------------------------+-------------------------------------------------------+
+| Field            			 | Beskrivelse                                           |
++----------------------------+-------------------------------------------------------+
+| uuid                       | Lederens UUID                                         |
+| name                       | Navnet på lederen                                     |
++----------------------------+-------------------------------------------------------+
+
+affiliation.orgUnit.email (fx sofd="affiliation.orgUnit.email.email")
++----------------------------+-------------------------------------------------------+
+| Field                      | Beskrivelse                                           |
++----------------------------+-------------------------------------------------------+
+| id                         | Emailens id                                           |
+| master                     | Hvor emailen kommer fra                               |
+| masterId                   | ID på stedet hvor emailen kommer fra                  |
+| email                      | Emailen                                               |
+| prime                      | Primær email                                          |
++----------------------------+-------------------------------------------------------+
+
+affiliation.orgUnit.tags (fx sofd="affiliation.orgUnit.tags.customValue")
++----------------------------+-------------------------------------------------------+
+| Field                      | Beskrivelse                                           |
++----------------------------+-------------------------------------------------------+
+| tag                        | Navn                                                  |
+| customValue                | Værdi                                                 |
++----------------------------+-------------------------------------------------------+
+
