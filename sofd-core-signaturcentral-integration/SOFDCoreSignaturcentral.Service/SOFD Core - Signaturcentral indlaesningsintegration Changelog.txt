@@ -1,5 +1,0 @@
-## [Version 1.1.0]
-- Support TLS 1.2
-
-## [Version 1.0.0]
-- No changelog
