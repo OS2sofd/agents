@@ -39,7 +39,9 @@ namespace SOFD
                     updateManagersEnabled = Properties.Settings.Default.ActiveDirectoryEnableManagerUpdate;
                     organizationService.MoveToHead();
                     orgUnits = organizationService.GetOrgUnits();
+                    log.Information($"Found {orgUnits.Count} OrgUnits in SOFD");
                     persons = organizationService.GetPersons();
+                    log.Information($"Found {persons.Count} Persons in SOFD");
                     if (updateManagersEnabled)
                     {
                         SetPersonManager(persons, orgUnits);
@@ -131,6 +133,7 @@ namespace SOFD
                                 affiliation = primeAffiliation;
                             }
 
+                            // check if affiliation belongs to a master that we update masters for
                             if (!string.IsNullOrEmpty(Properties.Settings.Default.ActiveDirectoryManagerUpdateMasters))
                             {
                                 var validMasters = Properties.Settings.Default.ActiveDirectoryManagerUpdateMasters.Split(';');
@@ -141,13 +144,29 @@ namespace SOFD
                                 }
                             }
 
-                            var orgUnit = orgUnits.First(o => Guid.Equals(o.uuid, affiliation.orgUnitUuid));
+                            // check if affiliation belongs an excluded orgunit
+                            if (!string.IsNullOrEmpty(Properties.Settings.Default.ActiveDirectoryManagerUpdateExcludedOrgunits))
+                            {
+                                var excludedOrgunits = Properties.Settings.Default.ActiveDirectoryManagerUpdateExcludedOrgunits.Split(';');
+                                if (excludedOrgunits.Contains(affiliation.calculatedOrgUnitUuid.ToString()))
+                                {
+                                    log.Debug($"Not setting manager for {person.name} because affiliation orgunit is excluded from manager updates");
+                                    continue;
+                                }
+                            }
+
+
+                            var orgUnit = orgUnits.First(o => Object.Equals(o.uuid, affiliation.calculatedOrgUnitUuid));
                             var managerPersonUuid = orgUnit.manager.uuid;
 
-                            // if the manager is the same as the person (it is for all managers), then set the manager to the manager of parent org
-                            if (string.Equals(person.uuid.ToString(), managerPersonUuid))
+
+                            // if the manager is the same as the person (it is for all managers), then set the manager to the parent manager
+                            var currentOrgUnit = orgUnit;
+                            while(string.Equals(person.uuid.ToString(), managerPersonUuid) && currentOrgUnit.parentUuid != null )
                             {
-                                managerPersonUuid = orgUnits.First(o => string.Equals(o.uuid.ToString(), orgUnit.parentUuid))?.manager?.uuid;
+                                var parentOrgUnit = orgUnits.First(o => string.Equals(o.uuid.ToString(), currentOrgUnit.parentUuid));
+                                managerPersonUuid =  parentOrgUnit?.manager?.uuid;
+                                currentOrgUnit = parentOrgUnit;
                             }
 
                             var manager = persons.First(p => p.uuid.ToString() == managerPersonUuid);
@@ -187,9 +206,12 @@ namespace SOFD
             bool orgUnitRequired = OrgUnitRequired(adMappingList.Values);
             bool orgUnitParentRequired = OrgUnitParentRequired(adMappingList.Values);
 
+            // DEBUG: only return this user
+            // persons = persons.Where(p => p.users.Any(u => u.userId == "usernamehere")).ToList();
+
             if (persons.Count > 0)
             {
-                log.Information("Found " + persons.Count + " modified persons");
+                log.Information("Checking " + persons.Count + " persons");
 
                 foreach (var person in persons)
                 {
@@ -209,7 +231,7 @@ namespace SOFD
                                 {
                                     if (string.Equals(user.employeeId, a.employeeId))
                                     {
-                                        relevantOrgUnitUuids.Add(a.orgUnitUuid.ToString());
+                                        relevantOrgUnitUuids.Add(a.calculatedOrgUnitUuid.ToString());
                                         break;
                                     }
                                 }
@@ -228,13 +250,13 @@ namespace SOFD
                         foreach (Affiliation a in person.affiliations)
                         {
                             // we care about relevant affiliations and prime affilations
-                            if (!a.prime && !relevantOrgUnitUuids.Contains(a.orgUnitUuid.ToString()))
+                            if (!a.prime && !relevantOrgUnitUuids.Contains(a.calculatedOrgUnitUuid.ToString()))
                             {
                                 continue;
                             }
 
                             // OrgUnit without parent
-                            OrgUnit orgUnit = GetOrgUnit(orgUnits, a.orgUnitUuid.ToString());
+                            OrgUnit orgUnit = GetOrgUnit(orgUnits, a.calculatedOrgUnitUuid.ToString());
                             if (orgUnit == null)
                             {
                                 continue;
@@ -299,9 +321,7 @@ namespace SOFD
             // otherwise orgunits are only required if they are part of the mapping xml
             foreach (string key in values)
             {
-                string[] tokens = key.Split('.');
-
-                if (tokens.Length >= 2 && tokens[1].Equals("orgUnit"))
+                if (key.Contains("orgUnit"))
                 {
                     return true;
                 }
@@ -316,7 +336,7 @@ namespace SOFD
             {
                 string[] tokens = key.Split('.');
 
-                if (tokens.Length >= 2 && tokens[1].Equals("orgUnit") && tokens[2].Contains("^"))
+                if (tokens.Length >= 2 && tokens[1].Equals("orgUnit") && (tokens[2].Contains("^") || tokens[2].Contains(">")))
                 {
                     return true;
                 }

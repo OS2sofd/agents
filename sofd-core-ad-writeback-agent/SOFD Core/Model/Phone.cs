@@ -11,5 +11,11 @@ namespace SOFD_Core.Model
         public string phoneType { get; set; }
         public bool prime { get; set; }
         public bool typePrime { get; set; }
+
+        public string phoneNumber45 { 
+            get {
+                return phoneNumber?.Length == 8 ? "+45" + phoneNumber : phoneNumber;
+            } 
+        }
     }
 }

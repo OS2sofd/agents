@@ -5,7 +5,7 @@ namespace SOFD_Core.Model
 {
     public class OrgUnit
     {
-        public Guid uuid { get; set; }
+        public string uuid { get; set; }
         public string master { get; set; }
         public string masterId { get; set; }
         public bool deleted { get; set; }
@@ -25,11 +25,11 @@ namespace SOFD_Core.Model
         public long? orgTypeId { get; set; }
         public List<Post> postAddresses { get; set; }
         public List<Phone> phones { get; set; }
-        public List<Email> emails { get; set; }
+        public string email { get; set; }
         public string parentUuid { get; set; }
         public OrgUnit parent { get; set; }
-        public List<OrgUnitTag> tags { get; set; }
-
+        public List<OrgUnitTag> tags { get; set; }       
+        public string urlAddress { get; set; }
         public String GetDisplayName()
         {
             return !String.IsNullOrEmpty(displayName) ? displayName : name;

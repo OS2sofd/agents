@@ -35,5 +35,11 @@
     <Setting Name="ActiveDirectoryManagerUpdateNoClear" Type="System.Boolean" Scope="Application">
       <Value Profile="(Default)">False</Value>
     </Setting>
+    <Setting Name="ActiveDirectoryManagerUpdateExcludedOrgunits" Type="System.String" Scope="Application">
+      <Value Profile="(Default)" />
+    </Setting>
+    <Setting Name="FullSyncCron" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">0 30 3 ? * *</Value>
+    </Setting>
   </Settings>
 </SettingsFile>

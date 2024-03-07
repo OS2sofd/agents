@@ -8,9 +8,12 @@
 	<!--<mapping sofd="affiliation.positionName" ad="description" />-->
 	<!--<mapping sofd="affiliation.orgUnit.name" ad="description" />-->
 
-	<!--Eksempel på mapping hvor man vil have navnet på enheden i 4. niveau fra toppen-->
+	<!--Eksempel på mapping hvor man vil have navnet på enheden i 4. niveau fra toppen med nedarvning -->
 	<!--<mapping sofd="affiliation.orgUnit.^4.name" ad="extensionAttribute3" />-->
 
+	<!--Eksempel på mapping hvor man vil have navnet på enheden i 4. niveau fra toppen uden nedarvning -->
+	<!--<mapping sofd="affiliation.orgUnit.>4.name" ad="extensionAttribute3" />-->	
+	
 	<!--Eksempel på concat mapping hvor man vil lægge 2 værdier sammen og skrive til én attribut i AD-->
 	<!--Denne vil skrive "fornavn (efternavn)" i AD-->
 	<!--<mapping sofd="concat(firstname,surname)" ad="extentionAttribute2" />-->
@@ -32,4 +35,10 @@
 
 	<!-- Eksempel på brugen af NOCLEAR mapningen til AD. Hvis den er angivet, så tømmer vi ikke feltet i AD hvis det forsvinder i SOFD -->
 	<!--<mapping sofd="firstname" ad="NOCLEAR(givenName)" />-->
+
+	<!-- Eksempel på brugen af NOREPLACE mapningen til AD. Hvis den er angivet, Så udfylder vi kun feltet i AD hvis det er tomt -->
+	<!--<mapping sofd="firstname" ad="NOREPLACE(givenName)" />-->
+
+	<!-- Eksempel på formattering af cpr med bindestreg-->
+	<!--<mapping sofd="cprformat(cpr)" ad="description" />-->
 </mappings>

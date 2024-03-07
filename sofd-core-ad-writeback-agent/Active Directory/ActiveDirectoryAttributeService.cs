@@ -89,7 +89,7 @@ namespace Active_Directory
                     {
                         foreach (var ou in orgUnits) 
                         {
-                            if (string.Equals(affiliation.orgUnitUuid, ou.uuid))
+                            if (string.Equals(affiliation.calculatedOrgUnitUuid, ou.uuid))
                             {
                                 orgUnit = ou;
                                 break;
@@ -184,14 +184,15 @@ namespace Active_Directory
 
                                                 if (string.IsNullOrEmpty(sofdValue))
                                                 {
-                                                    if (!string.IsNullOrEmpty(adValue) && ShouldClear(item.Key))
+                                                    if (!string.IsNullOrEmpty(adValue) && ShouldClear(item.Key) && ShouldReplace(item.Key))
                                                     {
                                                         log.Information("Clearing attribute for " + user.userId + ": " + key);
                                                         de.Properties[key].Clear();
                                                         changes = true;
                                                     }
                                                 }
-                                                else if (!sofdValue.Equals(adValue))
+                                                // update if values differ, but do not replace values in AD if NOREPLACE is used
+                                                else if (!sofdValue.Equals(adValue) && (String.IsNullOrEmpty(adValue) || ShouldReplace(item.Key) ))
                                                 {
                                                     log.Information("Setting attribute for " + user.userId + ": " + key + "=" + sofdValue);
                                                     de.Properties[key].Value = sofdValue;
@@ -308,7 +309,10 @@ namespace Active_Directory
             {
                 return key.Substring(8, key.Length - 9);
             }
-
+            else if (key.StartsWith("NOREPLACE("))
+            {
+                return key.Substring(10, key.Length - 11);
+            }
             return key;
         }
 
@@ -317,9 +321,19 @@ namespace Active_Directory
             if (key.StartsWith("NOCLEAR("))
             {
                 return false;
+            }            
+            return true;
+        }
+
+        private bool ShouldReplace(string key)
+        {
+            if (key.StartsWith("NOREPLACE("))
+            {
+                return false;
             }
 
             return true;
         }
+
     }
 }

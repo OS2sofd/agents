@@ -18,6 +18,7 @@ direkte attributter (fx sofd="firstname")
 | created                    | Dato for oprettelse af personen                       |
 | lastChanged                | Dato for sidste ændring af personen                   |
 | deleted                    | Om personen er slettet                                |
+| personCalculatedName       | ChosenName hvis udfyldt, eller fornavn + efternavn    |
 +----------------------------+-------------------------------------------------------+
 
 post (fx sofd="affiliation.orgUnit.post.street" for enhedens adresse eller sofd="post.street" for medarbejderens hjemmeadresse)
@@ -44,6 +45,7 @@ phone (fx sofd="phone.phoneNumber")
 | master                     | Hvor telefonen kommer fra                             |
 | masterId                   | ID på stedet hvor telefonen kommer fra                |
 | phoneNumber                | Telefonnummer                                         |
+| phoneNumber45              | Telefonnummer med +45 foran                           |
 | phoneType                  | Telefonens type                                       |
 | prime                      | Primær telefon                                        |
 | typePrime                  | Primær telefon af den type                            |
@@ -54,9 +56,10 @@ user (fx sofd="user.userId")
 | Field                      | Beskrivelse                                           |
 +----------------------------+-------------------------------------------------------+
 | id                         | Brugerens id                                          |
-| master                     | Hvor telefonen kommer fra                             |
-| masterId                   | ID på stedet hvor telefonen kommer fra                |
+| master                     | Hvor brugeren kommer fra                              |
+| masterId                   | ID på stedet hvor brugeren kommer fra                 |
 | userId                     | Brugerid                                              |
+| kombitUuid                 | Uuid der er registreret på brugeren i FK Organisation |
 | userType                   | Brugertype                                            |
 | employeeId                 | MedarbejderID                                         |
 | prime                      | Primær telefon                                        |
@@ -75,6 +78,8 @@ affiliation (fx sofd="affiliation.stopDate")
 | deleted                    | Om ansættelsen er slettet                             |
 | orgUnitUuid                | UUID på enheden som ansættelsen er knyttet til        |
 | employeeId                 | MedarbejderID                                         |
+| opusEmployeeId             | Medarbejdernummer fra OPUS                            |
+| sdEmployeeId               | Tjenestenummer fra SD                                 |
 | employmentTerms            | Ansættelsesforholdskode (fx 01, 02, osv)              |
 | employmentTermsText        | Ansættelsesforhold (månedslønnet, timelønnet, osv)    |
 | payGrade                   | Lønklasse                                             |
@@ -111,11 +116,13 @@ affiliation.orgUnit (fx sofd="affiliation.orgUnit.cvr")
 | orgType                    | Enhedens type                                         |
 | orgTypeId                  | Enhedens types ID                                     |
 | postAddresses              | Liste af adresser                                     |
-| phones                     | Liste af telefoner                                    |
+| phone                      | Den primære telefon                                   |
 | emails                     | Liste af emails                                       |
 | parentUuid                 | Enhedens forældres UUID                               |
 | parent                     | Forældreenheden                                       |
 | tags                       | Liste af tags                                         |
+| email                      | Enhedens email                                        |
+| urlAddress                 | Enhedens hjemmeside                                   |
 +----------------------------+-------------------------------------------------------+
 
 affiliation.orgUnit.manager (fx sofd="affiliation.orgUnit.manager.name")
@@ -126,22 +133,19 @@ affiliation.orgUnit.manager (fx sofd="affiliation.orgUnit.manager.name")
 | name                       | Navnet på lederen                                     |
 +----------------------------+-------------------------------------------------------+
 
-affiliation.orgUnit.email (fx sofd="affiliation.orgUnit.email.email")
-+----------------------------+-------------------------------------------------------+
-| Field                      | Beskrivelse                                           |
-+----------------------------+-------------------------------------------------------+
-| id                         | Emailens id                                           |
-| master                     | Hvor emailen kommer fra                               |
-| masterId                   | ID på stedet hvor emailen kommer fra                  |
-| email                      | Emailen                                               |
-| prime                      | Primær email                                          |
-+----------------------------+-------------------------------------------------------+
-
 affiliation.orgUnit.tags (fx sofd="affiliation.orgUnit.tags.customValue")
 +----------------------------+-------------------------------------------------------+
 | Field                      | Beskrivelse                                           |
 +----------------------------+-------------------------------------------------------+
 | tag                        | Navn                                                  |
 | customValue                | Værdi                                                 |
++----------------------------+-------------------------------------------------------+
+
+authorizationCode (fx sofd="authorizationCode.code")
++----------------------------+-------------------------------------------------------+
+| Field                      | Beskrivelse                                           |
++----------------------------+-------------------------------------------------------+
+| code                       | Autorisationsid                                       |
+| name                       | Navn på autorisationsid                               |
 +----------------------------+-------------------------------------------------------+
 

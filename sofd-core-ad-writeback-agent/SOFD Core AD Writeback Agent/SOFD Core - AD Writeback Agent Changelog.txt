@@ -59,3 +59,24 @@
 14.09.2022 - version 2.8.5 - Fixed bug when clearing manager field and managerNoClear is set to true
 21.10.2022 - version 2.9.0 - Added pad() method to allow padding fields with prefix chars
 24.10.2022 - version 2.9.1 - Fix an error on opususer-mapping when no opus user is present
+02.11.2022 - version 2.10.0 - Added cprformat() and replace() methods
+07.11.2022 - version 2.10.1 - Fixed null pointer exception in format() method
+08.11.2022 - version 2.11.0 - Added a trim() method
+16.11.2022 - version 2.11.1 - Fixed a few bugs when mapping orgunit phones
+17.11.2022 - version 2.11.2 - Added phoneNumber45 property on phones
+08.12.2022 - version 2.12.0 - Added opusEmployeeId property on affiliations
+12.12.2022 - version 2.13.0 - Added personCalculatedName on person
+09.01.2023 - version 2.14.0 - Fixed bug when assigning managers of managers
+27.01.2023 - version 2.15.0 - Can now exclude orgunits from manager update
+27.01.2023 - version 2.15.1 - Removed default mapping that was added by mistake
+03.05.2023 - version 2.16.0 - Fixed compatibility bug with newest version of SOFD Core
+22.06.2023 - version 2.17.0 - Added ">" operator on orgunit mappings
+26.06.2023 - version 2.18.0 - Added NOREPLACE flag on the AD field to prevent overwriting values in AD
+26.06.2023 - version 2.19.0 - Fixed minor bug in replace logic when clearing fields
+01.08.2023 - version 2.20.0 - Added kombitUuid to User
+30.08.2023 - version 2.21.0 - Now respects alternative OrgUnit on affiliations
+13.09.2023 - version 2.21.1 - Fixed bug in tag syntax
+14.09.2023 - version 2.21.2 - Reversed prevous fix - had unintended side effects
+04.12.2023 - version 2.21.3 - Added some logging
+04.01.2024 - version 2.22.0 - Made full sync configurable
+05.01.2024 - version 2.23.0 - Added orgunit email, sd employeeId, homepage and authorizationcode to mappings

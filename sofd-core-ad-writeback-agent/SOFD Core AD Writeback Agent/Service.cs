@@ -30,7 +30,9 @@ namespace SOFD
 
             // run every 5 minutes at 02, 07, 12, etc
             StartJob<WritebackJob>("WritebackJob", "0 2-59/5 * ? * *");
-            StartJob<WritebackJobCleaner>("WritebackFullSyncResetJob", "0 30 3 ? * *");
+
+            // run full sync according to config            
+            StartJob<WritebackJobCleaner>("WritebackFullSyncResetJob", Properties.Settings.Default.FullSyncCron);
 
             sched.Start();
         }

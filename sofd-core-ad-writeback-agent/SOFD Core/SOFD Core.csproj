@@ -55,10 +55,10 @@
     <Compile Include="Model\AccountOrderResponse.cs" />
     <Compile Include="Model\AccountOrderStatus.cs" />
     <Compile Include="Model\Affiliation.cs" />
+    <Compile Include="Model\AuthorizationCode.cs" />
     <Compile Include="Model\Change.cs" />
     <Compile Include="Model\DeltaSync.cs" />
     <Compile Include="Model\Email.cs" />
-    <Compile Include="Model\Enums\AffiliationFunction.cs" />
     <Compile Include="Model\Enums\ChangeType.cs" />
     <Compile Include="Model\Manager.cs" />
     <Compile Include="Model\OrgUnit.cs" />

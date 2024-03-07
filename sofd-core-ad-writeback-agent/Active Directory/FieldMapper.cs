@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
+using Serilog.Events;
 using SOFD_Core.Model;
 
 namespace Active_Directory
@@ -42,6 +43,18 @@ namespace Active_Directory
             {
                 return GetValuePad(userId, sofdField, person, affiliation, orgUnit);
             }
+            if (sofdField.StartsWith("cprformat("))
+            {
+                return GetValueCprFormat(userId, sofdField, person, affiliation, orgUnit);
+            }
+            if (sofdField.StartsWith("replace("))
+            {
+                return GetValueReplace(userId, sofdField, person, affiliation, orgUnit);
+            }
+            if (sofdField.StartsWith("trim("))
+            {
+                return GetValueTrim(userId, sofdField, person, affiliation, orgUnit);
+            }
 
             string[] tokens = sofdField.Split('.');
             if (tokens.Length < 1)
@@ -65,6 +78,8 @@ namespace Active_Directory
                     return MapPost(sofdField, person);
                 case "user":
                     return MapUser(userId, sofdField, person);
+                case "authorizationCode":
+                    return MapAuthorizationCode(sofdField, person);
                 default:
                     return person.GetType().GetProperty(tokens[0])?.GetValue(person)?.ToString();
             }
@@ -158,6 +173,36 @@ namespace Active_Directory
             return result;
         }
 
+        private static string GetValueReplace(string userId, string sofdField, Person person, Affiliation affiliation, OrgUnit orgUnit)
+        {
+            // replace(xxx,xxxx) - strip first 8 chars and last, then trim
+            var newSofdField = sofdField.Substring(8, sofdField.Length - 9).Trim();
+
+            // split by commas except commas that are inside parentheses (e.g. other methods)
+            string[] fields = Regex.Split(newSofdField, "(?<!\\([^\\)]*),");
+
+            if (fields.Length != 3)
+            {
+                throw new Exception("replace takes 3 arguments: " + sofdField);
+            }
+            var fieldValue = GetValue(userId, fields[0], person, affiliation, orgUnit);
+            if (fieldValue == null) { 
+                return null;
+            }
+            var search = fields[1].Replace("\\n", "\n");
+            var replacement = fields[2];
+            var result = fieldValue.Replace(search, replacement);
+            return result;
+        }
+
+        private static string GetValueTrim(string userId, string sofdField, Person person, Affiliation affiliation, OrgUnit orgUnit)
+        {
+            // trim(xxx,xxxx) - strip first 5 chars and last, then trim
+            var newSofdField = sofdField.Substring(5, sofdField.Length - 6).Trim();
+            var fieldValue = GetValue(userId, newSofdField, person, affiliation, orgUnit);
+            return fieldValue != null ? fieldValue.Trim() : null;
+        }
+
         private static string GetValueIsNull(string userId, string sofdField, Person person, Affiliation affiliation, OrgUnit orgUnit)
         {
             // isnull(xxx,xxxx) - strip first 7 chars and last, then trim
@@ -241,6 +286,17 @@ namespace Active_Directory
             }
             return field;
         }
+
+        private static string GetValueCprFormat(string userId, string sofdField, Person person, Affiliation affiliation, OrgUnit orgUnit)
+        {
+            // cprformat(xxx,xxxx) - strip first 4 chars and last, then trim
+            var newSofdField = sofdField.Substring(10, sofdField.Length - 11).Trim();
+            var input = GetValue(userId, newSofdField, person, affiliation, orgUnit);
+
+            var result = Regex.Replace(input, "^(.{6})(.{4})", "$1-$2", RegexOptions.IgnoreCase);
+            return result;
+        }
+
 
         private static string GetValueStatic(string sofdField)
         {
@@ -359,6 +415,25 @@ namespace Active_Directory
             return null;
         }
 
+        
+        private static string MapAuthorizationCode(string sofdField, Person person)
+        {
+            string[] tokens = sofdField.Split('.');
+            if (tokens.Length < 2)
+            {
+                throw new Exception("Invalid sofd field: " + sofdField);
+            }
+            var property = tokens[1];
+
+            if (person.authorizationCodes != null)
+            {
+                var authorizationCode = person.authorizationCodes.Where(a => a.prime).FirstOrDefault();
+                return authorizationCode?.GetType().GetProperty(property)?.GetValue(authorizationCode)?.ToString();
+            }
+            return null;
+        }
+
+
         private static string MapPhone(string sofdField, Person person)
         {
             string[] tokens = sofdField.Split('.');
@@ -379,6 +454,39 @@ namespace Active_Directory
             }
             return null;
         }
+
+        private static string MapOrgUnitPhone(string sofdField, OrgUnit orgUnit)
+        {
+            string[] tokens = sofdField.Split('.');
+            if (tokens.Length == 5) // phoneType specified
+            {
+                var phoneType = tokens[3];
+                var phoneProperty = tokens[4];
+                if (orgUnit.phones != null)
+                {
+                    var phone = orgUnit.phones.Where(p => p.phoneType.Equals(phoneType, StringComparison.InvariantCultureIgnoreCase)).OrderByDescending(p => p.typePrime).FirstOrDefault();
+                    if (phone != null)
+                    {
+                        return phone.GetType().GetProperty(phoneProperty)?.GetValue(phone)?.ToString();
+                    }
+                }
+            }
+            else if (tokens.Length == 4) // phoneType not specified
+            {
+                var phoneProperty = tokens[3];
+                var phone = orgUnit.phones.Where(p => p.prime).FirstOrDefault();
+                if (phone != null)
+                {
+                    return phone.GetType().GetProperty(phoneProperty)?.GetValue(phone)?.ToString();
+                }
+            }
+            else
+            {
+                throw new Exception("Invalid sofd field: " + sofdField);
+            }
+            return null;
+        }
+
 
         private static string MapAffiliation(string sofdField, Person person, Affiliation affiliation, OrgUnit orgUnit)
         {
@@ -425,6 +533,10 @@ namespace Active_Directory
             {
                 return orgUnit.manager?.name;
             }
+            else if ("phone".Equals(tokens[2]))
+            {
+                return MapOrgUnitPhone(sofdField, orgUnit);
+            }
             else if (tokens[2].StartsWith("tag["))
             {
                 return MapTag(sofdField, tokens[2], orgUnit);
@@ -456,6 +568,37 @@ namespace Active_Directory
                 var newSofdField = regex.Replace(sofdField, "", 1);
                 return MapOrgUnit(newSofdField, parentOU);
             }
+            else if (tokens[2].StartsWith(">"))
+            {
+                if (tokens.Length < 4)
+                {
+                    throw new Exception("Invalid sofd field: " + sofdField);
+                }
+
+                int level = int.Parse(tokens[2].Substring(1));
+                List<OrgUnit> hierarchy = new List<OrgUnit>();
+
+                OrgUnit parent = orgUnit;
+                while (parent != null)
+                {
+                    hierarchy.Insert(0,parent);
+                    parent = parent.parent;
+                }
+
+                if (hierarchy.Count < level)
+                {
+                    return null;
+                }
+                else
+                {
+                    var parentOU = hierarchy[level - 1];
+                    // remove first > part from sofdField
+                    var regex = new Regex("\\.>\\d+");
+                    var newSofdField = regex.Replace(sofdField, "", 1);
+                    return MapOrgUnit(newSofdField, parentOU);
+                }
+            }
+
             else if ("name".Equals(tokens[2]))
             {
                 return orgUnit?.GetDisplayName();

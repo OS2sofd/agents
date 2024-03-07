@@ -18,9 +18,12 @@ namespace SOFD_Core.Model
         public List<Phone> phones { get; set; }
         public List<User> users { get; set; }
         public List<Affiliation> affiliations { get; set; }
-        public Guid uuid { get; set; }
+        public string uuid { get; set; }
         public DateTime created { get; set; }
         public DateTime lastChanged { get; set; }
         public bool deleted { get; set; }
+        public string keyWords { get; set; }
+        public string personCalculatedName { get { return !string.IsNullOrWhiteSpace(chosenName) ? chosenName : ((firstname??"") + " " + (surname??"")).Trim(); } }
+        public List<AuthorizationCode> authorizationCodes { get; set; }
     }
 }
