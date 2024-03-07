@@ -50,7 +50,7 @@ namespace SOFD
                 attributeCpr = adAttributeCpr,
                 attributeEmployeeId = adAttributeEmployeeId,
                 allowEnablingWithoutEmployeeIdMatch = response.singleAccount,
-                existingAccountExcludeOUs = existingAccountExcludeOUs
+                existingAccountExcludeOUs = new List<String>() // exclusion should not be used when disabling account
             }, adLogger, organizationService);
 
             foreach (var order in response.pendingOrders)

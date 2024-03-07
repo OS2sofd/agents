@@ -18,7 +18,7 @@ namespace Active_Directory
             this.log = log;
         }
 
-        protected DirectoryEntryWrapper GetBySAMAccountName(string sAMAccountName)
+        public DirectoryEntryWrapper GetBySAMAccountName(string sAMAccountName)
         {
             var filter = string.Format("(&(objectClass=user)(objectClass=person)(sAMAccountName={0}))", sAMAccountName);
 

@@ -28,20 +28,21 @@ namespace SOFD
                             "$ppArg1=\"" + sAMAccountName + "\"\n" +
                             "$ppArg2=\"" + name + "\"\n" +
                             "$ppArg3=\"" + uuid + "\"\n" +
-                            "$ppArg4=\"" + dc + "\"\n" +
-                            "$ppArg5=\"" + (emailAlias == null ? "" : emailAlias) + "\"\n";
+                            "$ppArg4=\"" + (emailAlias == null ? "" : emailAlias) + "\"\n" +
+                            "$ppArg5=\"" + dc + "\"\n";
 
 
-                        script += "Invoke-Method -SAMAccountName $ppArg1 -Name $ppArg2 -Uuid $ppArg3";
-                        if (!string.IsNullOrEmpty(dc))
-                        {
-                            script += " -DC $ppArg4";
-                        }
-                        
+                    script += "Invoke-Method -SAMAccountName $ppArg1 -Name $ppArg2 -Uuid $ppArg3";
+
                         if (!string.IsNullOrEmpty(emailAlias))
                         {
-                            script += " -EmailAlias $ppArg5";
+                            script += " -EmailAlias $ppArg4";
                         }
+
+                        if (!string.IsNullOrEmpty(dc))
+                        {
+                            script += " -DC $ppArg5";
+                        }                        
 
                         script += "\n";
 

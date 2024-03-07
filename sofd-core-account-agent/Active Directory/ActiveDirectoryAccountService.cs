@@ -5,6 +5,7 @@ using System.DirectoryServices.AccountManagement;
 using SOFD_Core.Model;
 using Serilog;
 using SOFD_Core;
+using System.Text.RegularExpressions;
 
 namespace Active_Directory
 {
@@ -15,6 +16,8 @@ namespace Active_Directory
         private string defaultUPNDomain = "";
         private string alternativeUPNDomains = "";
         private SOFDOrganizationService organizationService;
+        private Regex rx = new Regex("^vik\\d{4}$");
+
 
         public ActiveDirectoryAccountService(ActiveDirectoryConfig config, ILogger log, SOFDOrganizationService organizationService) : base(config, log)
         {
@@ -96,6 +99,13 @@ namespace Active_Directory
 
             foreach (var existingAccount in existingAccounts)
             {
+                // skip any account with a username like vikXXXX as those are substitute accounts
+                string existingAccountUserId = existingAccount.sAMAccountName.ToLower();
+                if (rx.IsMatch(existingAccountUserId))
+                {
+                    continue;
+                }
+
                 // if an employeeId was supplied, see if an account exist with this employeeId
                 if (!allowEnablingWithoutEmployeeIdMatch && !string.IsNullOrEmpty(order.person.employeeId))
                 {
@@ -147,6 +157,13 @@ namespace Active_Directory
 
             foreach (var existingAccount in existingAccounts)
             {
+                // skip any account with a username like vikXXXX as those are substitute accounts
+                string existingAccountUserId = existingAccount.sAMAccountName.ToLower();
+                if (rx.IsMatch(existingAccountUserId))
+                {
+                    continue;
+                }
+
                 // attempt to re-enable disabled accounts
                 if (existingAccount.disabled)
                 {
@@ -171,6 +188,13 @@ namespace Active_Directory
                 {
                     foreach (var existingAccount in existingAccounts)
                     {
+                        // skip any account with a username like vikXXXX as those are substitute accounts
+                        string existingAccountUserId = existingAccount.sAMAccountName.ToLower();
+                        if (rx.IsMatch(existingAccountUserId))
+                        {
+                            continue;
+                        }
+
                         if (existingAccount.disabled)
                         {
                             result.DC = EnableAccount(existingAccount, order);

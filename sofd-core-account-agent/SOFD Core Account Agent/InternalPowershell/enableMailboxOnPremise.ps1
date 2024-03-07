@@ -6,7 +6,8 @@ function Invoke-Method {
 		[bool] $usePSSnapin = $(throw "Please specify usePSSnapin."),
 		[string] $server = $(throw "Please specify server."),
         [string] $identity = $(throw "Please specify an identity."),
-		[string] $email = $(throw "Please specify an email.")
+		[string] $email = $(throw "Please specify an email."),
+		[string] $DC = $(throw "Please specify a DC")
 	)
 	
 	$session = $null
@@ -19,6 +20,14 @@ function Invoke-Method {
 
 			$session = New-PSSession -ConfigurationName Microsoft.Exchange -ConnectionUri $remoteServer
 			Import-PSSession $session | Out-Null
+		}
+
+		# disable the mailbox if usertype is already a UserMailbox
+		# otherwise enabling it will fail
+		$recipientType = Get-Mailbox -DomainController $DC -Identity $identity -ErrorAction SilentlyContinue | Select-Object -ExpandProperty RecipientTypeDetails
+		if( $recipientType -eq "UserMailbox" )
+		{
+			Disable-Mailbox -Identity $identity -Confirm:$false
 		}
 
 		Enable-Mailbox -Identity $identity -PrimarySmtpAddress $email -ErrorAction Stop

@@ -179,8 +179,8 @@ namespace SOFD
                         {
                             throw new Exception($"Mailbox {emailAlias} not enabled because it already exists");
                         }
-
-                        exchangeService.EnableMailbox(order.linkedUserId, emailAlias);
+                        var wrapper = activeDirectoryService.GetBySAMAccountName(order.linkedUserId);
+                        exchangeService.EnableMailbox(order.linkedUserId, emailAlias, wrapper.DC);
                     }
 
                     // upon success, update the AD account, so the UPN matches the email alias                    
@@ -195,7 +195,7 @@ namespace SOFD
                         try
                         {
                             log.Information("Invoke powershell with arguments: " + order.linkedUserId + ", " + name + ", " + order.person.uuid + ", " + dc + ", " + emailAlias);
-                            createPowershellRunner.Run(order.linkedUserId, name, order.person.uuid, dc, emailAlias);
+                            createPowershellRunner.Run(order.linkedUserId, name, order.person.uuid, emailAlias, dc);
                         }
                         catch (Exception ex)
                         {

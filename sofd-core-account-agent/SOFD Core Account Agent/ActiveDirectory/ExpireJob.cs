@@ -43,7 +43,7 @@ namespace SOFD
 
             ActiveDirectoryAccountService activeDirectoryService = new ActiveDirectoryAccountService(new ActiveDirectoryConfig() {
                 attributeCpr = adAttributeCpr,
-                existingAccountExcludeOUs = existingAccountExcludeOUs
+                existingAccountExcludeOUs = new List<String>() // exclusion should not be used when expiring account
             }, adLogger, organizationService);
 
             foreach (var order in response.pendingOrders)

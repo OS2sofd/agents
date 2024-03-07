@@ -27,7 +27,7 @@ namespace SOFD
             this.usePSSnapin = usePSSnapin;
         }
 
-        public void EnableMailbox(string identity, string email)
+        public void EnableMailbox(string identity, string email, string dc)
         {
             logger.Information("Enabling mailbox " + email + " for " + identity);
 
@@ -42,11 +42,12 @@ namespace SOFD
                     alias = email.Substring(0, idx);
                     onlineEmail = alias + onlineDomain;
                 }
-                enableMailboxRemoteRunner.Run(usePSSnapin, exchangeServer, identity, email, alias, onlineEmail);
+                
+                enableMailboxRemoteRunner.Run(usePSSnapin, exchangeServer, identity, email, alias, onlineEmail, dc);
             }
             else
             {
-                enableMailboxOnPremiseRunner.Run(usePSSnapin, exchangeServer, identity, email);
+                enableMailboxOnPremiseRunner.Run(usePSSnapin, exchangeServer, identity, email, null, null, dc);
             }
         }
 

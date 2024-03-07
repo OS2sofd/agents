@@ -14,7 +14,7 @@ namespace SOFD
             this.powershellScript = powershellScript;
         }
 
-        public bool Run(bool usePSSnapin, string exchangeServer, string identity, string email = null, string alias = null, string onlineEmail = null, bool throwOnFailure = true)
+        public bool Run(bool usePSSnapin, string exchangeServer, string identity, string email = null, string alias = null, string onlineEmail = null, string dc = null, bool throwOnFailure = true)
         {
             var success = false;
             try
@@ -30,7 +30,8 @@ namespace SOFD
                             "$ppArg1=\"" + identity + "\"\n" +
                             "$ppArg2=\"" + (email == null ? "" : email) + "\"\n" +
                             "$ppArg3=\"" + (alias == null ? "" : alias) + "\"\n" +
-                            "$ppArg4=\"" + (onlineEmail == null ? "" : onlineEmail) + "\"\n";
+                            "$ppArg4=\"" + (onlineEmail == null ? "" : onlineEmail) + "\"\n" +
+                            "$ppArg5=\"" + (dc == null ? "" : dc) + "\"\n";
 
                         script += "Invoke-Method -usePSSnapin $ppArgSnapin -server $ppArgServer -Identity $ppArg1";
                         if (!string.IsNullOrEmpty(email))
@@ -46,6 +47,11 @@ namespace SOFD
                         if (!string.IsNullOrEmpty(onlineEmail))
                         {
                             script += " -OnlineEmail $ppArg4";
+                        }
+
+                        if (!string.IsNullOrEmpty(dc))
+                        {
+                            script += " -DC $ppArg5";
                         }
 
                         script += "\n";
