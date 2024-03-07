@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.DirectoryServices;
 using System.DirectoryServices.ActiveDirectory;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Security;
 
@@ -241,9 +242,12 @@ namespace SOFDCoreAD.Service.ActiveDirectory
                 try
                 {
                     directoryEntry = new DirectoryEntry(string.Format("LDAP://{0}", controller.Name));
-
-                    Logger.Verbose("Connected to " + controller.Name);
-                    break;
+                    if (directoryEntry.Properties.Count > 0) {
+                        // accessing the nativeObject will throw an exception if we're not really connected to an operational DC
+                        var nativeObejct = directoryEntry.NativeObject;
+                        Logger.Verbose("Connected to " + controller.Name);
+                        break;
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -316,6 +320,45 @@ namespace SOFDCoreAD.Service.ActiveDirectory
                 Photo = properties.GetValue<byte[]>(propertyResolver.PhotoProperty, null)
             };
 
+            var created = properties.GetValue<DateTime?>(propertyResolver.WhenCreatedProperty, null);
+            if (created != null)
+            {
+                adUser.WhenCreated = ((DateTime)created).ToString("yyyy-MM-dd");
+            }
+
+            if (!string.IsNullOrEmpty(propertyResolver.AltSecurityIdentitiesProperty))
+            {
+                var altSecIdentities = (ResultPropertyValueCollection)properties["altsecurityidentities"];
+                if (altSecIdentities != null)
+                {
+                    string nemLoginUuid = null;
+
+                    for (int i = 0; i < altSecIdentities.Count; i++)
+                    {
+                        string val = (string)altSecIdentities[i];
+                        if (val == null)
+                        {
+                            continue;
+                        }
+
+                        if (val.StartsWith("NL3UUID-ACTIVE-NSIS"))
+                        {
+                            string[] tokens = val.Split('.');
+                            if (tokens.Length >= 3)
+                            {
+                                nemLoginUuid = tokens[2];
+                                break;
+                            }
+                        }
+                    }
+
+                    if (!string.IsNullOrEmpty(nemLoginUuid))
+                    {
+                        adUser.MitIDUUID = nemLoginUuid;
+                    }
+                }
+            }
+
             if (properties is ResultPropertyCollection)
             {
                 ResultPropertyCollection rpc = (ResultPropertyCollection)properties;
@@ -330,7 +373,7 @@ namespace SOFDCoreAD.Service.ActiveDirectory
                     long largeInt = (long)rpc[propertyResolver.AccountExpireProperty][0];
                     if (largeInt > 0 && largeInt < long.MaxValue)
                     {
-                        var dateTime = DateTime.FromFileTimeUtc(largeInt);
+                        var dateTime = DateTime.FromFileTime(largeInt);
 
                         adUser.AccountExpireDate = dateTime.ToString("yyyy-MM-dd");
                     }
@@ -349,7 +392,7 @@ namespace SOFDCoreAD.Service.ActiveDirectory
                                 // it seems the lockoutDuration is a VERY large number if it is permanent (so we check for 1 year)
                                 if (lockoutDuration < (60 * 24 * 365))
                                 {
-                                    var dateTime = DateTime.FromFileTimeUtc(largeInt).AddMinutes(lockoutDuration);
+                                    var dateTime = DateTime.FromFileTime(largeInt).AddMinutes(lockoutDuration);
 
                                     if (DateTime.Now.ToUniversalTime() < dateTime)
                                     {
@@ -382,7 +425,7 @@ namespace SOFDCoreAD.Service.ActiveDirectory
 
                     if (datelong > 0 && datelong < long.MaxValue)
                     {
-                        var dateTime = DateTime.FromFileTimeUtc(datelong);
+                        var dateTime = DateTime.FromFileTime(datelong);
 
                         adUser.AccountExpireDate = dateTime.ToString("yyyy-MM-dd");
                     }
@@ -402,7 +445,7 @@ namespace SOFDCoreAD.Service.ActiveDirectory
                             // it seems the lockoutDuration is a VERY large number if it is permanent (so we check for 1 year)
                             if (lockoutDuration < (60 * 24 * 365))
                             {
-                                var dateTime = DateTime.FromFileTimeUtc(datelong).AddMinutes(lockoutDuration);
+                                var dateTime = DateTime.FromFileTime(datelong).AddMinutes(lockoutDuration);
 
                                 if (DateTime.Now.ToUniversalTime() < dateTime)
                                 {
@@ -452,7 +495,7 @@ namespace SOFDCoreAD.Service.ActiveDirectory
 
                     if (lastChanged != -1)
                     {
-                        daysLeft = maxPasswordAge - DateTime.Today.Subtract(DateTime.FromFileTime(lastChanged)).Days;
+                        daysLeft = maxPasswordAge - DateTime.Today.Date.Subtract(DateTime.FromFileTime(lastChanged).Date).Days;
                     }
                 }
             }

@@ -18,3 +18,8 @@
 ## [Version 1.9.0] - 2022-03-07 - Support DepartmentNumber and FaxNumber on AD accounts
 ## [Version 1.9.1] - 2022-04-20 - Fixed bug when reading lastpwdset from deltasync
 ## [Version 2.0.0] - 2022-10-24 - Support reading UPN into SOFD
+## [Version 2.0.1] - 2023-07-27 - Added errorhandling when connecting to a DC
+## [Version 2.1.0] - 2023-11-24 - Added support for retrieving whenCreated from AD user
+## [Version 2.1.1] - 2023-11-29 - Fixed password expiry off by one bug
+## [Version 2.2.0] - 2024-01-10 - Read AltSecurityIdentities if it contains the MitID Erhverv UUID
+## [Version 2.2.1] - 2024-01-31 - Fixed AccountExpirationDate udlæsning (den læste 1 dag for tidligt)

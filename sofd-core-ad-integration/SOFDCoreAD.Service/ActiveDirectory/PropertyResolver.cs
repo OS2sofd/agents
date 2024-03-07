@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Runtime.InteropServices;
 
 namespace SOFDCoreAD.Service.ActiveDirectory
 {
@@ -21,11 +22,13 @@ namespace SOFDCoreAD.Service.ActiveDirectory
         public string DeletedProperty { get; set; }
         public string ObjectGuidProperty { get; set; }
         public string AccountExpireProperty { get; set; }
+        public string WhenCreatedProperty { get; set; }
         public string UserAccountControlProperty { get; set; }
         public string PwdLastSetProperty { get; set; }       
         public string PhotoProperty { get; set; }
         public string LockoutTimeProperty { get; set; }
         public string UPNProperty { get; set; }
+        public string AltSecurityIdentitiesProperty { get; set; }
 
         public Dictionary<string,string> LocalExtentionProperties { get; set; }
         public string[] AllProperties { get; set; }
@@ -48,6 +51,7 @@ namespace SOFDCoreAD.Service.ActiveDirectory
             UserAccountControlProperty = "useraccountcontrol";
             LockoutTimeProperty = "lockoutTime";
             UPNProperty = "userPrincipalName";
+            WhenCreatedProperty = "whencreated";
             MobileProperty = Settings.GetStringValue("ActiveDirectory.Property.Mobile");
             SecretMobileProperty = Settings.GetStringValue("ActiveDirectory.Property.SecretMobile");
             PhoneProperty = Settings.GetStringValue("ActiveDirectory.Property.Phone");
@@ -71,6 +75,7 @@ namespace SOFDCoreAD.Service.ActiveDirectory
                                 ,DeletedProperty
                                 ,ObjectGuidProperty
                                 ,PwdLastSetProperty
+                                ,WhenCreatedProperty
                                 ,AccountExpireProperty
                                 ,LockoutTimeProperty
                                 ,UserAccountControlProperty
@@ -115,6 +120,12 @@ namespace SOFDCoreAD.Service.ActiveDirectory
             if (PhotoProperty != null)
             {
                 allProperties.Add(PhotoProperty);
+            }
+
+            if (Settings.GetBooleanValue("ActiveDirectory.ReadAltSecurityIdentities"))
+            {
+                AltSecurityIdentitiesProperty = "altSecurityIdentities";
+                allProperties.Add(AltSecurityIdentitiesProperty);
             }
 
             allProperties.AddRange(LocalExtentionProperties.Values);

@@ -23,10 +23,12 @@ namespace SOFDCoreAD.Service.Model
         public string ObjectGuid { get; set; }
         public long DaysToPwdChange { get; set; }
         public string AccountExpireDate { get; set; }
+        public string WhenCreated { get; set; }
         public bool Deleted { get; set; }
         public bool Disabled { get; set; }
         public bool PasswordLocked { get; set; }
         public string UPN { get; set; }
+        public string MitIDUUID { get; set; }
 
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public byte[] Photo { get; set; }
