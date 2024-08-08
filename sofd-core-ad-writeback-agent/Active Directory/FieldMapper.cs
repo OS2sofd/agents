@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
+using Serilog.Core;
 using Serilog.Events;
 using SOFD_Core.Model;
 
@@ -160,7 +161,7 @@ namespace Active_Directory
 
             var result = "";
             foreach (var field in fields)
-            { 
+            {
                 var fieldValue = GetValue(userId, field, person, affiliation, orgUnit);
                 // if any of the fields in the join are null, the entire join expression evaluates to null
                 if (fieldValue == null)
@@ -186,7 +187,7 @@ namespace Active_Directory
                 throw new Exception("replace takes 3 arguments: " + sofdField);
             }
             var fieldValue = GetValue(userId, fields[0], person, affiliation, orgUnit);
-            if (fieldValue == null) { 
+            if (fieldValue == null) {
                 return null;
             }
             var search = fields[1].Replace("\\n", "\n");
@@ -260,7 +261,7 @@ namespace Active_Directory
             }
             var length = int.Parse(args[1]);
             var field = GetValue(userId, args[0], person, affiliation, orgUnit);
-            
+
             if (field != null && field.Length > length)
             {
                 field = field.Substring(field.Length - length, length);
@@ -415,7 +416,7 @@ namespace Active_Directory
             return null;
         }
 
-        
+
         private static string MapAuthorizationCode(string sofdField, Person person)
         {
             string[] tokens = sofdField.Split('.');
@@ -541,6 +542,36 @@ namespace Active_Directory
             {
                 return MapTag(sofdField, tokens[2], orgUnit);
             }
+            else if (tokens[2].StartsWith("_"))
+            {
+                if (tokens.Length < 4)
+                {
+                    throw new Exception("Invalid sofd field: " + sofdField);
+                }
+
+                int level = int.Parse(tokens[2].Substring(1));
+                List<OrgUnit> hierarchy = new List<OrgUnit>();
+
+                OrgUnit parent = orgUnit;
+                while (parent != null)
+                {
+                    hierarchy.Add(parent);
+                    parent = parent.parent;
+                }
+
+                if (hierarchy.Count < level)
+                {
+                    return null;
+                }
+
+                OrgUnit parentOU = hierarchy[level];
+
+                // remove first ^ part from sofdField
+                var regex = new Regex("\\._\\d+");
+                var newSofdField = regex.Replace(sofdField, "", 1);
+
+                return MapOrgUnit(newSofdField, parentOU);
+            }
             else if (tokens[2].StartsWith("^"))
             {
                 if (tokens.Length < 4)
@@ -563,6 +594,7 @@ namespace Active_Directory
                 {
                     parentOU = stack.Pop();
                 }
+
                 // remove first ^ part from sofdField
                 var regex = new Regex("\\.\\^\\d+");
                 var newSofdField = regex.Replace(sofdField, "", 1);
@@ -581,7 +613,7 @@ namespace Active_Directory
                 OrgUnit parent = orgUnit;
                 while (parent != null)
                 {
-                    hierarchy.Insert(0,parent);
+                    hierarchy.Insert(0, parent);
                     parent = parent.parent;
                 }
 
@@ -598,11 +630,23 @@ namespace Active_Directory
                     return MapOrgUnit(newSofdField, parentOU);
                 }
             }
-
             else if ("name".Equals(tokens[2]))
             {
                 return orgUnit?.GetDisplayName();
             }
+            else if ("parent".Equals(tokens[2]))
+            {
+                if (tokens.Length < 4)
+                {
+                    throw new Exception("Invalid sofd field: " + sofdField);
+                }
+                var parent = orgUnit.parent ?? orgUnit;
+                // remove first parent part from sofdField
+                var regex = new Regex("\\.parent");
+                var newSofdField = regex.Replace(sofdField, "", 1);
+                return MapOrgUnit(newSofdField, parent);
+            }
+
 
             return orgUnit?.GetType().GetProperty(tokens[2])?.GetValue(orgUnit)?.ToString();
         }

@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json;
 using Serilog;
 using SOFDCoreAD.Service.Model;
+using SOFDCoreAD.Service.Service.PAM;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -28,7 +29,7 @@ namespace SOFDCoreAD.Service.Backend
             using (WebClient webClient = new WebClient())
             {
                 webClient.Headers["Content-Type"] = "application/json";
-                webClient.Headers["ApiKey"] = Settings.GetStringValue("Backend.Password");
+                webClient.Headers["ApiKey"] = PAMService.GetBackendApiKey();
                 webClient.Headers["ClientVersion"] = clientVersion;
                 webClient.Encoding = System.Text.Encoding.UTF8;
 
@@ -46,7 +47,7 @@ namespace SOFDCoreAD.Service.Backend
                 using (WebClient webClient = new WebClient())
                 {
                     webClient.Headers["Content-Type"] = "application/json";
-                    webClient.Headers["ApiKey"] = Settings.GetStringValue("Backend.Password");
+                    webClient.Headers["ApiKey"] = PAMService.GetBackendApiKey();
                     webClient.Headers["ClientVersion"] = clientVersion;
                     webClient.Encoding = System.Text.Encoding.UTF8;
 

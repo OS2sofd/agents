@@ -1,0 +1,10 @@
+﻿{
+  "profiles": {
+    "sofd_core_ad_replicator": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "DOTNET_ENVIRONMENT": "Development"
+      }
+    }
+  }
+}

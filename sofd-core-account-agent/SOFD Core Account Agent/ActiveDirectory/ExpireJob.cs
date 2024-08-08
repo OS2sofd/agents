@@ -1,6 +1,7 @@
 ﻿using Active_Directory;
 using Quartz;
 using Serilog;
+using SOFD.PAM;
 using SOFD_Core;
 using SOFD_Core.Model;
 using SOFD_Core.Model.Enums;
@@ -22,7 +23,7 @@ namespace SOFD
 
         public ExpireJob()
         {
-            this.organizationService = new SOFDOrganizationService(Properties.Settings.Default.SofdUrl, Properties.Settings.Default.SofdApiKey);
+            this.organizationService = new SOFDOrganizationService(Properties.Settings.Default.SofdUrl, PAMService.GetApiKey());
         }
 
         public void Execute()
@@ -55,7 +56,7 @@ namespace SOFD
                 {
                     var processOrderStatus = activeDirectoryService.ProcessExpireOrder(order);
 
-                    log.Information("Setting expireDate=" + order.endDate + " for " + order.person.firstname + " " + order.person.surname + ": " + order.userId);
+                    log.Information("Setting expireDate=" + order.endDate?.Date + " for " + order.person.firstname + " " + order.person.surname + ": " + order.userId);
 
                     status.status = processOrderStatus.status;
                     status.affectedUserId = processOrderStatus.sAMAccountName;

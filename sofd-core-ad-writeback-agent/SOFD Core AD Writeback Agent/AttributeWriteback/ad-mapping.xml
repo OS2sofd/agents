@@ -8,11 +8,14 @@
 	<!--<mapping sofd="affiliation.positionName" ad="description" />-->
 	<!--<mapping sofd="affiliation.orgUnit.name" ad="description" />-->
 
+	<!--Eksempel på mapping hvor man vil have navnet på forældreenheden -->
+	<!--<mapping sofd="affiliation.orgUnit.parent.name" ad="description" />-->
+
 	<!--Eksempel på mapping hvor man vil have navnet på enheden i 4. niveau fra toppen med nedarvning -->
-	<!--<mapping sofd="affiliation.orgUnit.^4.name" ad="extensionAttribute3" />-->
+	<!--<mapping sofd="affiliation.orgUnit.^4.name" ad="title" />-->
 
 	<!--Eksempel på mapping hvor man vil have navnet på enheden i 4. niveau fra toppen uden nedarvning -->
-	<!--<mapping sofd="affiliation.orgUnit.>4.name" ad="extensionAttribute3" />-->	
+	<!--<mapping sofd="affiliation.orgUnit.>4.name" ad="description" />-->	
 	
 	<!--Eksempel på concat mapping hvor man vil lægge 2 værdier sammen og skrive til én attribut i AD-->
 	<!--Denne vil skrive "fornavn (efternavn)" i AD-->
@@ -41,4 +44,8 @@
 
 	<!-- Eksempel på formattering af cpr med bindestreg-->
 	<!--<mapping sofd="cprformat(cpr)" ad="description" />-->
+	
+	<!-- tag navnet på enheden 1 niveau over der hvor medarbejderen er ansat -->
+	<!--<mapping sofd="affiliation.orgUnit._1.name" ad="description" />-->
+	
 </mappings>

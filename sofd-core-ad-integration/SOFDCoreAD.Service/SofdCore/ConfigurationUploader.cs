@@ -1,5 +1,6 @@
 ﻿using Ionic.Zip;
 using RestSharp;
+using SOFDCoreAD.Service.Service.PAM;
 using System;
 using System.IO;
 using System.Net;
@@ -23,7 +24,7 @@ namespace SOFDCoreAD.Service
 
             enabled = Settings.GetBooleanValue("UploadConfig.Enabled");
             url = Settings.GetStringValue("UploadConfig.SofdCoreUrl");
-            apiKey = Settings.GetStringValue("UploadConfig.SofdCoreApiKey");
+            apiKey = PAMService.GetSofdApiKey();
         }
 
         public static void UploadConfiguration()

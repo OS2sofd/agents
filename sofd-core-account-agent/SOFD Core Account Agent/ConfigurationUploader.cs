@@ -1,4 +1,5 @@
 ﻿using Ionic.Zip;
+using SOFD.PAM;
 using SOFD_Core;
 using System;
 using System.IO;
@@ -31,7 +32,7 @@ namespace SOFD
                 }
             }
 
-            var organizationService = new SOFDOrganizationService(Properties.Settings.Default.SofdUrl, Properties.Settings.Default.SofdApiKey);
+            var organizationService = new SOFDOrganizationService(Properties.Settings.Default.SofdUrl, PAMService.GetApiKey());
             organizationService.UploadConfig(output);
         }
     }

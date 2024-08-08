@@ -1,10 +1,12 @@
 ﻿using Active_Directory;
 using Quartz;
 using Serilog;
+using SOFD.PAM;
 using SOFD_Core;
 using SOFD_Core.Model;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.Design;
 using System.Linq;
 using System.Xml;
 
@@ -22,7 +24,7 @@ namespace SOFD
 
         public WritebackJob()
         {
-            this.organizationService = new SOFDOrganizationService(Properties.Settings.Default.SofdUrl, Properties.Settings.Default.SofdApiKey);
+            this.organizationService = new SOFDOrganizationService(Properties.Settings.Default.SofdUrl, PAMService.GetApiKey());
         }
 
         public void Execute(IJobExecutionContext context)
@@ -147,10 +149,13 @@ namespace SOFD
                             // check if affiliation belongs an excluded orgunit
                             if (!string.IsNullOrEmpty(Properties.Settings.Default.ActiveDirectoryManagerUpdateExcludedOrgunits))
                             {
-                                var excludedOrgunits = Properties.Settings.Default.ActiveDirectoryManagerUpdateExcludedOrgunits.Split(';');
-                                if (excludedOrgunits.Contains(affiliation.calculatedOrgUnitUuid.ToString()))
+                                var excludedOrgUnitUuids = Properties.Settings.Default.ActiveDirectoryManagerUpdateExcludedOrgunits.Split(';').ToList();
+                                excludedOrgUnitUuids = GetChildOrgUnitUuidsRecursive(orgUnits, excludedOrgUnitUuids);
+
+                                if (excludedOrgUnitUuids.Contains(affiliation.calculatedOrgUnitUuid.ToString()))
                                 {
                                     log.Debug($"Not setting manager for {person.name} because affiliation orgunit is excluded from manager updates");
+                                    user.managerUpdateExcluded = true;
                                     continue;
                                 }
                             }
@@ -183,6 +188,18 @@ namespace SOFD
                     }
                 }
             }
+        }
+
+        private List<string> GetChildOrgUnitUuidsRecursive(List<OrgUnit> orgUnits, List<string> excludedOrgUnitUuids)
+        {
+            var result = new List<string>();
+            result.AddRange(excludedOrgUnitUuids);
+            foreach (var uuid in excludedOrgUnitUuids)
+            {
+                var children = orgUnits.Where(o => o.parentUuid == uuid).Select(o => o.uuid).ToList();
+                result.AddRange(GetChildOrgUnitUuidsRecursive(orgUnits, children));
+            }
+            return result.Distinct().ToList();
         }
 
         private void UpdateAttributes(List<Person> persons, List<OrgUnit> orgUnits, bool updateManagersEnabled, bool managerNoClear)
@@ -336,11 +353,15 @@ namespace SOFD
             {
                 string[] tokens = key.Split('.');
 
-                if (tokens.Length >= 2 && tokens[1].Equals("orgUnit") && (tokens[2].Contains("^") || tokens[2].Contains(">")))
+                if (tokens.Any(t => t.Contains("^") || t.Contains(">") || t.Contains("_")))
                 {
                     return true;
                 }
                 if (tokens.Length >= 2 && tokens[1].Equals("orgUnit") && tokens[2].StartsWith("tag[") && tokens[2].Contains("true"))
+                {
+                    return true;
+                }
+                if (tokens.Length >= 2 && tokens[1].Equals("orgUnit") && (tokens[2] == "parent"))
                 {
                     return true;
                 }

@@ -88,6 +88,7 @@ affiliation (fx sofd="affiliation.stopDate")
 | affiliationType            | Ansættelsestype                                       |
 | positionId                 | ID på stillingen                                      |
 | positionName               | Stillingstekst                                        |
+| positionShort              | Kort stillingstekst fra OPUS                          |
 | positionDisplayName        | Display stillingstekst                                |
 | positionCalculatedName     | Displaytekst hvis angivet, ellers alm. stillingstekst |
 | functions                  | Liste af ansættelsesfunktioner                        |
@@ -127,7 +128,7 @@ affiliation.orgUnit (fx sofd="affiliation.orgUnit.cvr")
 
 affiliation.orgUnit.manager (fx sofd="affiliation.orgUnit.manager.name")
 +----------------------------+-------------------------------------------------------+
-| Field            			 | Beskrivelse                                           |
+| Field                      | Beskrivelse                                           |
 +----------------------------+-------------------------------------------------------+
 | uuid                       | Lederens UUID                                         |
 | name                       | Navnet på lederen                                     |

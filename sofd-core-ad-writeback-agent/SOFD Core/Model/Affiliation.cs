@@ -26,6 +26,7 @@ namespace SOFD_Core.Model
         public string affiliationType { get; set; }
         public string positionId { get; set; }
         public string positionName { get; set; }
+        public String positionShort { get; set; }
         public string positionDisplayName { get; set; }
         public string positionCalculatedName { get { return !string.IsNullOrWhiteSpace(positionDisplayName) ? positionDisplayName : positionName; } }
         public string calculatedOrgUnitUuid { get { return !string.IsNullOrWhiteSpace(alternativeOrgUnitUuid) ? alternativeOrgUnitUuid : orgUnitUuid; } }

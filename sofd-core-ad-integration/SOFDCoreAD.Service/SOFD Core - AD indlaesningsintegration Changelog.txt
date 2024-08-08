@@ -22,4 +22,5 @@
 ## [Version 2.1.0] - 2023-11-24 - Added support for retrieving whenCreated from AD user
 ## [Version 2.1.1] - 2023-11-29 - Fixed password expiry off by one bug
 ## [Version 2.2.0] - 2024-01-10 - Read AltSecurityIdentities if it contains the MitID Erhverv UUID
-## [Version 2.2.1] - 2024-01-31 - Fixed AccountExpirationDate udlæsning (den læste 1 dag for tidligt)
+## [Version 2.2.1] - 2024-01-31 - Fixed AccountExpirationDate udlÃ¦sning (den lÃ¦ste 1 dag for tidligt)
+## [Version 2.3.0] - 2024-08-01 - Added support for CyberArk (Privileged access management)

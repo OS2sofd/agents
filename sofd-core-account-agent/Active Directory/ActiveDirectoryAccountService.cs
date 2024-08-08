@@ -344,11 +344,10 @@ namespace Active_Directory
                         if (person == null)
                         {
                             log.Error("Could not find person with uuid in SOFD: " + order.person.uuid);
-
                         }
                         
                         newUser.UserPrincipalName = sAMAccountName + defaultUPNDomain;
-                        if (person.affiliations != null && person.affiliations.Count > 0)
+                        if (person?.affiliations != null && person.affiliations.Count > 0)
                         {
                             List<string> alternatives = new List<string>(alternativeUPNDomains.Split(';')); 
                             if (alternatives.Count > 0)

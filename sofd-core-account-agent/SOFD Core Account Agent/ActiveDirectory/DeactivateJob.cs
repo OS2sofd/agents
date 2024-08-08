@@ -1,5 +1,6 @@
 ﻿using Active_Directory;
 using Serilog;
+using SOFD.PAM;
 using SOFD_Core;
 using SOFD_Core.Model;
 using System;
@@ -22,7 +23,7 @@ namespace SOFD
 
         public DeactivateJob()
         {
-            this.organizationService = new SOFDOrganizationService(Properties.Settings.Default.SofdUrl, Properties.Settings.Default.SofdApiKey);
+            this.organizationService = new SOFDOrganizationService(Properties.Settings.Default.SofdUrl, PAMService.GetApiKey());
 
             if (!string.IsNullOrEmpty(Properties.Settings.Default.ActiveDirectoryDeactivatePowershell))
             {
@@ -77,7 +78,7 @@ namespace SOFD
                         try
                         {
                             log.Information("Invoke powershell with arguments: " + sAMAccountName + ", " + name + ", " + uuid + ", " + processOrderStatus.DC);
-                            powershellRunner.Run(sAMAccountName, name, uuid, processOrderStatus.DC);
+                            powershellRunner.Run(sAMAccountName, name, uuid, null, processOrderStatus.DC);
                         }
                         catch (Exception ex)
                         {

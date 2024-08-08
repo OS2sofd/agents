@@ -14,7 +14,7 @@ namespace SOFD
             this.powershellScript = powershellScript;
         }
 
-        public void Run(string sAMAccountName, string name, string uuid, string dc, string emailAlias = null)
+        public void Run(string sAMAccountName, string name, string uuid, string emailAlias, string dc)
         {
             try
             {

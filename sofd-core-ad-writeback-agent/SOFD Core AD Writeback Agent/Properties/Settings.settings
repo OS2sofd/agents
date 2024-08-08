@@ -41,5 +41,20 @@
     <Setting Name="FullSyncCron" Type="System.String" Scope="Application">
       <Value Profile="(Default)">0 30 3 ? * *</Value>
     </Setting>
+    <Setting Name="CyberArkEnabled" Type="System.Boolean" Scope="Application">
+      <Value Profile="(Default)">False</Value>
+    </Setting>
+    <Setting Name="CyberArkAppId" Type="System.String" Scope="Application">
+      <Value Profile="(Default)" />
+    </Setting>
+    <Setting Name="CyberArkSafe" Type="System.String" Scope="Application">
+      <Value Profile="(Default)" />
+    </Setting>
+    <Setting Name="CyberArkObject" Type="System.String" Scope="Application">
+      <Value Profile="(Default)" />
+    </Setting>
+    <Setting Name="CyberArkAPI" Type="System.String" Scope="Application">
+      <Value Profile="(Default)" />
+    </Setting>
   </Settings>
 </SettingsFile>

@@ -153,7 +153,17 @@ namespace Active_Directory
                                             string adValue = de.Properties.Contains(key) ? de.Properties[key].Value.ToString() : null;
                                             string sofdValue = FieldMapper.GetValue(user.userId, item.Value, person, affiliation, orgUnit);
 
-                                            // Handle special case: accountExpires
+                                            // Handle special case: initials can only take 6 chars, so skip if more than 7 chars
+                                            if ("initials".Equals(key, StringComparison.InvariantCultureIgnoreCase))
+                                            {
+                                                if (sofdValue != null && sofdValue.Length > 6)
+                                                {
+                                                    log.Debug("Skipping initials for " + user.userId + " because length > 6");
+                                                    continue;
+                                                }
+                                            }
+
+                                            // Handle special case: accountExpires - data needs to be processed first
                                             if ("accountExpires".Equals(key, StringComparison.InvariantCultureIgnoreCase))
                                             {
                                                 adValue = result.Properties.Contains(key) ? ((Int64)result.Properties[key][0]).ToString() : null;
@@ -179,6 +189,7 @@ namespace Active_Directory
                                                 }
                                             }
 
+                                            // handle special case for commonName
                                             if (!"cn".Equals(key))
                                             {
 
@@ -217,7 +228,7 @@ namespace Active_Directory
                                         }
                                     }
 
-                                    if (updateManagersEnabled)
+                                    if (updateManagersEnabled && !user.managerUpdateExcluded)
                                     {
                                         try
                                         {

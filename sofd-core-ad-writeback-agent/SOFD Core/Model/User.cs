@@ -14,7 +14,9 @@ namespace SOFD_Core.Model
         public bool prime { get; set; }
         public string kombitUuid { get; set; }
 
-        // internal field only
+        // internal fields only
         public string managerADAccountName { get; set; }
+        public bool managerUpdateExcluded { get; set; } = false;
+
     }
 }

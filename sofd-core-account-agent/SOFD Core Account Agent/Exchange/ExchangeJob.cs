@@ -1,6 +1,7 @@
 ﻿using Active_Directory;
 using Quartz;
 using Serilog;
+using SOFD.PAM;
 using SOFD_Core;
 using SOFD_Core.Model;
 using System;
@@ -27,7 +28,7 @@ namespace SOFD
         {
             if (!string.IsNullOrEmpty(Properties.Settings.Default.ExchangeServer) || Properties.Settings.Default.ExchangeOnlyPowershell )
             {
-                this.organizationService = new SOFDOrganizationService(Properties.Settings.Default.SofdUrl, Properties.Settings.Default.SofdApiKey);
+                this.organizationService = new SOFDOrganizationService(Properties.Settings.Default.SofdUrl, PAMService.GetApiKey());
 
                 if (!string.IsNullOrEmpty(Properties.Settings.Default.ExchangeCreatePowershell))
                 {
@@ -194,7 +195,7 @@ namespace SOFD
                     {
                         try
                         {
-                            log.Information("Invoke powershell with arguments: " + order.linkedUserId + ", " + name + ", " + order.person.uuid + ", " + dc + ", " + emailAlias);
+                            log.Information("Invoke powershell with arguments: " + order.linkedUserId + ", " + name + ", " + order.person.uuid + ", " + emailAlias + ", " + dc);
                             createPowershellRunner.Run(order.linkedUserId, name, order.person.uuid, emailAlias, dc);
                         }
                         catch (Exception ex)
