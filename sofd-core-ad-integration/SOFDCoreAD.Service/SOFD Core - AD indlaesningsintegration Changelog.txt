@@ -24,3 +24,4 @@
 ## [Version 2.2.0] - 2024-01-10 - Read AltSecurityIdentities if it contains the MitID Erhverv UUID
 ## [Version 2.2.1] - 2024-01-31 - Fixed AccountExpirationDate udlæsning (den læste 1 dag for tidligt)
 ## [Version 2.3.0] - 2024-08-01 - Added support for CyberArk (Privileged access management)
+## [Version 2.4.0] - 2024-10-07 - Config setting to ignore specific DC

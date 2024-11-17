@@ -87,3 +87,5 @@
 19.06.2024 - version 2.28.0 - Fixed bug when using nested parent org expressions in xml mapping
 01.07.2024 - version 2.29.0 - Added orgunit._X syntax to go UP in X levels from the affiliation ou pointer, and cap initials to max size 6
 01.08.2024 - version 2.30.0 - Added support for CyberArk (Privileged access management)
+23.08.2024 - version 2.31.0 - Added support for inheritedEan field
+15.10.2024 - version 2.32.0 - Added vendor to affiliation model

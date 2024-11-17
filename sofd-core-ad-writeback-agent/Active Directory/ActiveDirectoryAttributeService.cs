@@ -308,8 +308,15 @@ namespace Active_Directory
                 }
                 catch (Exception ex)
                 {
-                    log.Error("Failed to connect to AD for user: '" + user?.userId + "'");
-                    throw ex;
+                    if (ex is UnauthorizedAccessException)
+                    {
+                        Log.Warning("UnauthorizedAccessException when updating " + user?.userId + " : " + ex.Message);
+                    }
+                    else
+                    {
+                        log.Error("Failed to connect to AD for user: '" + user?.userId + "'");
+                        throw ex;
+                    }
                 }
             }
         }

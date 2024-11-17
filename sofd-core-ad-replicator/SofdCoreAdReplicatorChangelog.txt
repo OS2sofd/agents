@@ -1,10 +1,13 @@
-1.0.0 - Initial version
-1.1.0 - Understøtte non-root root :)
-1.1.1 - RegEx not case-sensitive
-1.2.0 - Supports writing LOS ID into customizable field on OU
-1.2.1 - Attempt to remove deletion protect flag on OUs before moving
-1.3.0 - Support for multiple org branches. Code signing.
-1.4.0 - Support DisplayName for OUs
-1.4.1 - Bugfix for OrgUnit root mapping
-1.5.0 - Added support for more characters in OU name (e.g. comma)
-1.6.0 - Added support for CyberArk (Privileged access management)
+0000-00-00 1.0.0 - Initial version
+0000-00-00 1.1.0 - Understøtte non-root root :)
+0000-00-00 1.1.1 - RegEx not case-sensitive
+0000-00-00 1.2.0 - Supports writing LOS ID into customizable field on OU
+0000-00-00 1.2.1 - Attempt to remove deletion protect flag on OUs before moving
+0000-00-00 1.3.0 - Support for multiple org branches. Code signing.
+0000-00-00 1.4.0 - Support DisplayName for OUs
+0000-00-00 1.4.1 - Bugfix for OrgUnit root mapping
+0000-00-00 1.5.0 - Added support for more characters in OU name (e.g. comma)
+0000-00-00 1.6.0 - Added support for CyberArk (Privileged access management)
+2024-09-19 1.6.1 - Added some logging
+2024-10-15 1.6.2 - Fix issue with special characters in OU names when renaming/moving
+2024-10-19 1.7.0 - Added support for powershell scripts

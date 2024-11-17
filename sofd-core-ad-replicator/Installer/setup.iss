@@ -33,10 +33,14 @@ Source: "*.pdb"; DestDir: "{app}"; Flags: ignoreversion
 Source: "*.runtimeconfig.json"; DestDir: "{app}"; Flags: ignoreversion
 Source: "*.deps.json"; DestDir: "{app}"; Flags: ignoreversion
 Source: "appsettings.json"; DestDir: "{app}"; Flags: ignoreversion onlyifdoesntexist
+Source: "scripts\*"; DestDir: "{app}\scripts"; Flags: ignoreversion onlyifdoesntexist
+
 
 [Run]
 Filename: "sc.exe"; Parameters: "create ""{#AppName}"" binpath= ""{app}\{#ExeName}"" displayname=""{#AppName}"""; Flags: runhidden
 Filename: "sc.exe"; Parameters: "description ""{#AppName}"" ""{#AppName}"""; Flags: runhidden
+
+
 
 [UninstallRun]
 Filename: "sc.exe"; Parameters: "stop ""{#AppName}"""; Flags: runhidden

@@ -1,13 +1,13 @@
 ﻿using Microsoft.Extensions.Logging;
-using sofd_core_ad_replicator.Services.Sofd;
 using sofd_core_ad_replicator.Services.Sofd.Model;
 using System;
 using System.Collections.Generic;
 using System.DirectoryServices;
 using System.DirectoryServices.AccountManagement;
+using System.IO;
 using System.Linq;
+using System.Management.Automation;
 using System.Text.RegularExpressions;
-using Unidecode.NET;
 
 namespace sofd_core_ad_replicator.Services.ActiveDirectory
 {
@@ -17,7 +17,7 @@ namespace sofd_core_ad_replicator.Services.ActiveDirectory
         private readonly string oUIdField;
         private readonly string rootDeletedOusOu;
         private readonly string userIdField = "sAMAccountName";
-        private readonly string eanField;
+        private readonly string eanField;   
         private readonly bool eanFieldInherit;
         private readonly string losIdField;
         private readonly string streetAddressField;
@@ -456,7 +456,7 @@ namespace sofd_core_ad_replicator.Services.ActiveDirectory
             if (!match.Parent.Properties["distinguishedName"].Value.Equals(shouldBeIn.Properties["distinguishedName"].Value))
             {
                 logger.LogInformation($"Moving OU {match.Properties["distinguishedName"].Value} to {shouldBeIn.Properties["distinguishedName"].Value}");
-
+                var DNBeforeMove = match.Properties["distinguishedName"].Value;
                 // try to remove the "protect against accidental deletion" flag
                 try
                 {
@@ -472,6 +472,35 @@ namespace sofd_core_ad_replicator.Services.ActiveDirectory
                 }
 
                 match.MoveTo(shouldBeIn);
+                var DNAfterMove = match.Properties["distinguishedName"].Value;
+
+                if (settings.ActiveDirectorySettings.OURunScriptOnMove != null && settings.ActiveDirectorySettings.OURunScriptOnMove.Length > 0)
+                {
+                    using (PrincipalContext ctx = GetPrincipalContext())
+                    {
+                        String script = null;
+                        string domainController = ctx.ConnectedServer;
+                        using (PowerShell ps = PowerShell.Create())
+                        {
+                            ps.AddScript(File.ReadAllText(@"" + settings.ActiveDirectorySettings.OURunScriptOnMove));
+                            script = script + "\n\n" +
+
+                                   "$ppArg1=\"" + domainController + "\"\n" +
+
+                                   "$ppArg2=\"" + DNBeforeMove + "\"\n" +
+
+                                   "$ppArg3=\"" + DNAfterMove + "\"\n";
+
+                            script += "\nInvoke-Method -DomainController $ppArg1 -DistinguishedNameFrom $ppArg2 -DistinguishedNameTo $ppArg3";
+                            script += "\n";
+
+                            ps.AddScript(script);
+                            logger.LogInformation($"Invoking powershell script {settings.ActiveDirectorySettings.OURunScriptOnMove}: {script}");
+                            ps.Invoke();
+                        }
+                    }
+                }
+
             }
         }
 
@@ -479,6 +508,7 @@ namespace sofd_core_ad_replicator.Services.ActiveDirectory
         {
             DirectoryEntry newOU = ouToCreateIn.Children.Add("OU=" + name, "OrganizationalUnit");
             newOU.Properties[oUIdField].Value = currentNode.Uuid;
+
 
             if (!string.IsNullOrEmpty(eanField))
             {
@@ -520,14 +550,41 @@ namespace sofd_core_ad_replicator.Services.ActiveDirectory
 
                 if (!string.IsNullOrEmpty(postalCodeField))
                 {
-                    newOU.Properties[postalCodeField].Value = primaryPost.PostalCode;
+                    newOU.Properties[postalCodeField].Value = primaryPost.PostalCode;   
                 }
             }
 
             logger.LogInformation("Creating OU " + name);
-
             newOU.CommitChanges();
 
+            if (settings.ActiveDirectorySettings.OURunScriptOnCreate != null && settings.ActiveDirectorySettings.OURunScriptOnCreate.Length > 0)
+            {
+                using (PrincipalContext ctx = GetPrincipalContext())
+                {
+                    String script = null;
+                    string domainController = ctx.ConnectedServer;
+                    using (PowerShell ps = PowerShell.Create())
+                    {
+                        ps.AddScript(File.ReadAllText(@"" + settings.ActiveDirectorySettings.OURunScriptOnCreate));
+
+                        script = script + "\n\n" +
+
+                               "$ppArg1=\"" + domainController + "\"\n" +
+
+                               "$ppArg2=\"" + name + "\"\n" +
+
+                               "$ppArg3=\"" + newOU.Properties["distinguishedName"].Value + "\"\n";
+
+                        script += "\nInvoke-Method -DomainController $ppArg1 -Name $ppArg2 -DistinguishedName $ppArg3";
+
+                        script += "\n";
+
+                        ps.AddScript(script);
+                        logger.LogInformation($"Invoking powershell script {settings.ActiveDirectorySettings.OURunScriptOnCreate}: {script}");
+                        ps.Invoke();
+                    }
+                }
+            }
             return newOU;
         }
 
@@ -595,7 +652,6 @@ namespace sofd_core_ad_replicator.Services.ActiveDirectory
                     return;
                 }
             }
-
             logger.LogInformation("Moving OU with name " + toMove.Name + " to deleted ous ou for today");
 
             // try to remove the "protect against accidental deletion" flag
@@ -611,23 +667,92 @@ namespace sofd_core_ad_replicator.Services.ActiveDirectory
             {
                 logger.LogWarning(ex, "Tried to remove 'protect against accidental deletion' on OU, but it failed");
             }
-
+            logger.LogInformation($"Invoking MoveTo - entry:{toMove.Path} newParent:{match.Path}");
             toMove.MoveTo(match);
             match.Close();
+
+            if (settings.ActiveDirectorySettings.OURunScriptOnDelete != null && settings.ActiveDirectorySettings.OURunScriptOnDelete.Length > 0)
+            {
+                using (PrincipalContext ctx = GetPrincipalContext())
+                {
+                    String script = null;
+                    string domainController = ctx.ConnectedServer;
+                    using (PowerShell ps = PowerShell.Create())
+                    {
+                        ps.AddScript(File.ReadAllText(@"" + settings.ActiveDirectorySettings.OURunScriptOnDelete));
+
+                        script = script + "\n\n" +
+
+                               "$ppArg1=\"" + domainController + "\"\n" +
+
+                               "$ppArg2=\"" + toMove.Name + "\"\n" +
+
+                               "$ppArg3=\"" + toMove.Properties["distinguishedName"].Value + "\"\n";
+
+                        script += "\nInvoke-Method -DomainController $ppArg1 -Name $ppArg2 -DistinguishedName $ppArg3";
+
+
+                        script += "\n";
+
+
+                        ps.AddScript(script);
+                        logger.LogInformation($"Invoking powershell script {settings.ActiveDirectorySettings.OURunScriptOnDelete}: {script}");
+                        ps.Invoke();
+                    }
+                }
+            }
+
+
         }
 
         private void MoveUser(string userId, string from, string to)
-        {
-            logger.LogInformation("Moved user " + userId + " from " + from + " to " + to);
-
-            if (!dryRunMoveUsers)
+        {            
+            if (dryRunMoveUsers)
             {
-                DirectoryEntry eLocation = new DirectoryEntry("LDAP://" + from);
-                DirectoryEntry nLocation = new DirectoryEntry("LDAP://" + to);
+                logger.LogInformation("DRYRUN moving user " + userId + " from " + from + " to " + to);
+            }
+            else
+            {
+                logger.LogInformation("moving user " + userId + " from " + from + " to " + to);
+                // LDAP doesn't escape "/" specifically, so it's nescessary to escape it separately
+                DirectoryEntry eLocation = new DirectoryEntry("LDAP://" + from.Replace("/", "\\/"));
+                DirectoryEntry nLocation = new DirectoryEntry("LDAP://" + to.Replace("/", "\\/"));
+                var DNBefore = eLocation.Parent.Properties["distinguishedName"].Value;
+                var DNAfter = nLocation.Properties["distinguishedName"].Value;
 
                 eLocation.MoveTo(nLocation);
                 eLocation.Close();
                 nLocation.Close();
+
+                if (settings.ActiveDirectorySettings.UserRunScriptOnMove != null && settings.ActiveDirectorySettings.UserRunScriptOnMove.Length > 0)
+                {
+                    using (PrincipalContext ctx = GetPrincipalContext())
+                    {
+                        String script = null;
+                        string domainController = ctx.ConnectedServer;
+                        using (PowerShell ps = PowerShell.Create())
+                        {
+                            ps.AddScript(File.ReadAllText(@"" + settings.ActiveDirectorySettings.UserRunScriptOnMove));
+                            script = script + "\n\n" +
+
+                                   "$ppArg1=\"" + domainController + "\"\n" +
+
+                                   "$ppArg2=\"" + userId + "\"\n" +
+
+                                   "$ppArg3=\"" + DNBefore + "\"\n" +
+
+                                   "$ppArg4=\"" + DNAfter + "\"\n";
+
+                            script += "\nInvoke-Method -DomainController $ppArg1 -SamAccountName $ppArg2 -DistinguishedNameFrom $ppArg3 -DistinguishedNameTo $ppArg4";
+                            script += "\n";
+
+                            ps.AddScript(script);
+                            logger.LogInformation($"Invoking powershell script {settings.ActiveDirectorySettings.UserRunScriptOnMove}: {script}");
+                            ps.Invoke();
+                        }
+                    }
+                }
+
             }
         }
 
@@ -662,6 +787,7 @@ namespace sofd_core_ad_replicator.Services.ActiveDirectory
 
             return FindInheritedEan(parentOrgUnit, allOrgUnits);
         }
-
+        
     }
+
 }

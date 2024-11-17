@@ -92,6 +92,7 @@ affiliation (fx sofd="affiliation.stopDate")
 | positionDisplayName        | Display stillingstekst                                |
 | positionCalculatedName     | Displaytekst hvis angivet, ellers alm. stillingstekst |
 | functions                  | Liste af ansættelsesfunktioner                        |
+| vendor                     | Leverandør (for eksterne tilhørsforhold)              |
 +----------------------------+-------------------------------------------------------+
 
 affiliation.orgUnit (fx sofd="affiliation.orgUnit.cvr")
@@ -109,7 +110,8 @@ affiliation.orgUnit (fx sofd="affiliation.orgUnit.cvr")
 | displayName                | Navnet der bliver vist                                |
 | cvrName                    | CVR navn svarende til enhedens P-nummer               |
 | cvr                        | CVR                                                   |
-| ean                        | EAN                                                   |
+| ean                        | Primært EAN                                           |
+| inheritedEan               | Primært EAN inkl. nedarvet                            |
 | senr                       | SE-nummer                                             |
 | pnr                        | P-nummer                                              |
 | manager                    | Enhedens leder                                        |

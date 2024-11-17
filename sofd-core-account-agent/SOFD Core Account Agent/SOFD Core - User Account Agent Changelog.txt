@@ -62,3 +62,5 @@
 27.02.2024 - version 2.7.1 - Stop execution flow in case of error (1 case of continuing flow after error fixed)
 13.05.2024 - version 2.7.2 - Fixed bug in parameter order when invoking exchange powershell scripts
 01.08.2024 - version 2.8.0 - Added support for CyberArk (Privileged access management)
+05.09.2024 - version 2.9.0 - Support optional JSON payload during AD account creation
+25.10.2024 - version 2.9.1 - Fixed syntax error in createExchange.ps1

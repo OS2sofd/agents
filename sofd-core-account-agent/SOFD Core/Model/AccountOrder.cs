@@ -11,5 +11,6 @@ namespace SOFD_Core.Model
         public string userId { get; set; }
         public string linkedUserId { get; set; }
         public DateTime? endDate { get; set; }
+        public string optionalJson { get; set; }
     }
 }

@@ -353,7 +353,7 @@ namespace SOFD
             {
                 string[] tokens = key.Split('.');
 
-                if (tokens.Any(t => t.Contains("^") || t.Contains(">") || t.Contains("_")))
+                if (tokens.Any(t => t.Contains("^") || t.Contains(">") || t.Contains("_") || t.Contains("inherited")))
                 {
                     return true;
                 }

@@ -47,5 +47,4 @@
 	
 	<!-- tag navnet på enheden 1 niveau over der hvor medarbejderen er ansat -->
 	<!--<mapping sofd="affiliation.orgUnit._1.name" ad="description" />-->
-	
 </mappings>

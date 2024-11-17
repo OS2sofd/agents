@@ -14,25 +14,26 @@ namespace SOFD
             this.powershellScript = powershellScript;
         }
 
-        public void Run(string sAMAccountName, string name, string uuid, string emailAlias, string dc)
+        public void Run(string sAMAccountName, string name, string uuid, string emailAlias, string dc, string optionalJson = null)
         {
+            string script = null;
             try
             {
-                string script = System.IO.File.ReadAllText(powershellScript);
+                script = System.IO.File.ReadAllText(powershellScript);
 
                 if (!string.IsNullOrEmpty(script))
                 {
                     using (PowerShell powershell = PowerShell.Create())
                     {
-                        script = script + "\n\n" +
+                        script += "\n\n" +
                             "$ppArg1=\"" + sAMAccountName + "\"\n" +
                             "$ppArg2=\"" + name + "\"\n" +
                             "$ppArg3=\"" + uuid + "\"\n" +
                             "$ppArg4=\"" + (emailAlias == null ? "" : emailAlias) + "\"\n" +
-                            "$ppArg5=\"" + dc + "\"\n";
+                            "$ppArg5=\"" + dc + "\"\n" +
+                            "$ppArg6='" + (optionalJson == null ? "" : optionalJson) + "'\n";
 
-
-                    script += "Invoke-Method -SAMAccountName $ppArg1 -Name $ppArg2 -Uuid $ppArg3";
+                        script += "\nInvoke-Method -SAMAccountName $ppArg1 -Name $ppArg2 -Uuid $ppArg3";
 
                         if (!string.IsNullOrEmpty(emailAlias))
                         {
@@ -42,7 +43,12 @@ namespace SOFD
                         if (!string.IsNullOrEmpty(dc))
                         {
                             script += " -DC $ppArg5";
-                        }                        
+                        }
+
+                        if (!string.IsNullOrEmpty(optionalJson))
+                        {
+                            script += " -optionalJson $ppArg6";
+                        }
 
                         script += "\n";
 
@@ -53,7 +59,7 @@ namespace SOFD
             }
             catch (Exception ex)
             {
-                log.Error(ex, "Failed to run powershell script: " + powershellScript);
+                log.Error(ex, "Failed to run powershell script: " + script);
             }
         }
     }

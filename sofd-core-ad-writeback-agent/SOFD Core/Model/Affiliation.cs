@@ -31,5 +31,6 @@ namespace SOFD_Core.Model
         public string positionCalculatedName { get { return !string.IsNullOrWhiteSpace(positionDisplayName) ? positionDisplayName : positionName; } }
         public string calculatedOrgUnitUuid { get { return !string.IsNullOrWhiteSpace(alternativeOrgUnitUuid) ? alternativeOrgUnitUuid : orgUnitUuid; } }
         public List<string> functions { get; set; }
+        public string vendor { get; set; }
     }
 }

@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Management.Automation;
 using System.Text.RegularExpressions;
 using Serilog.Core;
 using Serilog.Events;
+using SOFD_Core;
 using SOFD_Core.Model;
 
 namespace Active_Directory
@@ -646,7 +648,20 @@ namespace Active_Directory
                 var newSofdField = regex.Replace(sofdField, "", 1);
                 return MapOrgUnit(newSofdField, parent);
             }
-
+            else if ("inheritedEan".Equals(tokens[2])) {
+                if (orgUnit.ean != null)
+                {
+                    return orgUnit.ean.ToString();
+                }
+                else if (orgUnit.parent != null)
+                {
+                    return MapOrgUnit(sofdField, orgUnit.parent);
+                }
+                else
+                {
+                    return null;
+                }                
+            }
 
             return orgUnit?.GetType().GetProperty(tokens[2])?.GetValue(orgUnit)?.ToString();
         }

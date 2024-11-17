@@ -22,11 +22,13 @@ namespace SOFDCoreAD.Service.ActiveDirectory
         private readonly PropertyResolver propertyResolver = new PropertyResolver();
         private readonly Boolean allowMultipleUsers;
         private readonly Boolean treatDisabledAsEnabled;
+        private readonly string ignoredDcPrefix;
 
         public ActiveDirectoryService()
         {
             allowMultipleUsers = Settings.GetBooleanValue("ActiveDirectory.AllowMultipleUsers");
             treatDisabledAsEnabled = Settings.GetBooleanValue("ActiveDirectory.TreatDisabledAsEnabled");
+            ignoredDcPrefix = Settings.GetStringValue("ActiveDirectory.IgnoredDCPrefix");
         }
 
         public IEnumerable<ADUser> GetFullSyncUsers(out byte[] directorySynchronizationCookie)
@@ -241,6 +243,12 @@ namespace SOFDCoreAD.Service.ActiveDirectory
             {
                 try
                 {
+                    if (!string.IsNullOrEmpty(ignoredDcPrefix) && controller.Name.StartsWith(ignoredDcPrefix))
+                    {
+                        Logger.Verbose("Skipping " + controller.Name);
+                        continue;
+                    }
+
                     directoryEntry = new DirectoryEntry(string.Format("LDAP://{0}", controller.Name));
                     if (directoryEntry.Properties.Count > 0) {
                         // accessing the nativeObject will throw an exception if we're not really connected to an operational DC

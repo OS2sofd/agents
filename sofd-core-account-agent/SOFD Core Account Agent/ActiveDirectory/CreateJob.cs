@@ -84,11 +84,12 @@ namespace SOFD
                         string name = order.person.firstname + " " + order.person.surname;
                         string uuid = order.person.uuid;
                         string sAMAccountName = status.affectedUserId;
+                        string optionalJson = order.optionalJson;
 
                         try
                         {
                             log.Information("Invoke powershell with arguments: " + sAMAccountName + ", " + name + ", " + uuid + ", " + processOrderStatus.DC);
-                            powershellRunner.Run(sAMAccountName, name, uuid,null, processOrderStatus.DC);
+                            powershellRunner.Run(sAMAccountName, name, uuid,null, processOrderStatus.DC, optionalJson);
                         }
                         catch (Exception ex)
                         {
