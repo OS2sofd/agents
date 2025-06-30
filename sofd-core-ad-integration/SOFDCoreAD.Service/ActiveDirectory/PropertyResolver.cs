@@ -29,6 +29,7 @@ namespace SOFDCoreAD.Service.ActiveDirectory
         public string LockoutTimeProperty { get; set; }
         public string UPNProperty { get; set; }
         public string AltSecurityIdentitiesProperty { get; set; }
+        public string AffiliationStopDateProperty { get; set; }
 
         public Dictionary<string,string> LocalExtentionProperties { get; set; }
         public string[] AllProperties { get; set; }
@@ -55,6 +56,7 @@ namespace SOFDCoreAD.Service.ActiveDirectory
             MobileProperty = Settings.GetStringValue("ActiveDirectory.Property.Mobile");
             SecretMobileProperty = Settings.GetStringValue("ActiveDirectory.Property.SecretMobile");
             PhoneProperty = Settings.GetStringValue("ActiveDirectory.Property.Phone");
+            AffiliationStopDateProperty = Settings.GetStringValue("ActiveDirectory.Property.AffiliationStopDate");
             DepartmentNumberProperty = Settings.GetStringValue("ActiveDirectory.Property.DepartmentNumber");
             FaxNumberProperty = Settings.GetStringValue("ActiveDirectory.Property.FaxNumber");
             PhotoProperty = Settings.GetStringValue("ActiveDirectory.Property.Photo");
@@ -79,7 +81,8 @@ namespace SOFDCoreAD.Service.ActiveDirectory
                                 ,AccountExpireProperty
                                 ,LockoutTimeProperty
                                 ,UserAccountControlProperty
-                                ,UPNProperty
+                                ,UPNProperty,
+                                "distinguishedName"
                             });
 
             if (AffiliationProperty != null)
@@ -121,7 +124,8 @@ namespace SOFDCoreAD.Service.ActiveDirectory
             {
                 allProperties.Add(PhotoProperty);
             }
-
+            if (AffiliationStopDateProperty != null)
+            {                allProperties.Add(AffiliationStopDateProperty);            }
             if (Settings.GetBooleanValue("ActiveDirectory.ReadAltSecurityIdentities"))
             {
                 AltSecurityIdentitiesProperty = "altSecurityIdentities";

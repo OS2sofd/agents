@@ -29,6 +29,7 @@ namespace SOFDCoreAD.Service.Model
         public bool PasswordLocked { get; set; }
         public string UPN { get; set; }
         public string MitIDUUID { get; set; }
+        public string AffiliationStopDate { get; set; }
 
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public byte[] Photo { get; set; }

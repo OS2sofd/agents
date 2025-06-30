@@ -25,3 +25,6 @@
 ## [Version 2.2.1] - 2024-01-31 - Fixed AccountExpirationDate udlæsning (den læste 1 dag for tidligt)
 ## [Version 2.3.0] - 2024-08-01 - Added support for CyberArk (Privileged access management)
 ## [Version 2.4.0] - 2024-10-07 - Config setting to ignore specific DC
+## [Version 2.4.1] - 2024-11-28 - Only verbose logging on exlusion
+## [Version 2.5.0] - 2025-01-08 - Added AffiliationStopDate property to support setting stopDate on affiliations
+## [Version 2.6.0] - 2025-01-10 - Added Affiliation control on the OU level

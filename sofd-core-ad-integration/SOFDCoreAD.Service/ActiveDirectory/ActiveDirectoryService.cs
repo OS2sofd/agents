@@ -9,6 +9,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Security;
+using System.Security.Policy;
 
 namespace SOFDCoreAD.Service.ActiveDirectory
 {
@@ -17,18 +18,23 @@ namespace SOFDCoreAD.Service.ActiveDirectory
         const int AccountDisable = 2;
         const int DontExpirePasssword = 65536;
         const string ExcludeOUsKey = "ActiveDirectory.ExcludeOUs";
+        private Dictionary<string, string> OuAffiliationMap = new Dictionary<string, string>();
 
         public ILogger Logger { get; set; }
         private readonly PropertyResolver propertyResolver = new PropertyResolver();
         private readonly Boolean allowMultipleUsers;
         private readonly Boolean treatDisabledAsEnabled;
         private readonly string ignoredDcPrefix;
+        private readonly Boolean useOuAffiliationMap;
+        private readonly string ouAffiliationProperty;
 
         public ActiveDirectoryService()
         {
             allowMultipleUsers = Settings.GetBooleanValue("ActiveDirectory.AllowMultipleUsers");
             treatDisabledAsEnabled = Settings.GetBooleanValue("ActiveDirectory.TreatDisabledAsEnabled");
             ignoredDcPrefix = Settings.GetStringValue("ActiveDirectory.IgnoredDCPrefix");
+            ouAffiliationProperty = Settings.GetStringValue("ActiveDirectory.Property.OU.Affiliation");
+            useOuAffiliationMap = (string.IsNullOrEmpty(ouAffiliationProperty) == false);
         }
 
         public IEnumerable<ADUser> GetFullSyncUsers(out byte[] directorySynchronizationCookie)
@@ -37,6 +43,13 @@ namespace SOFDCoreAD.Service.ActiveDirectory
             long lockoutDuration = GetLockoutDuration();
 
             Logger.Information("maxPasswordAge = " + maxPasswordAge + ", lockoutDuration = " + lockoutDuration);
+
+            if (useOuAffiliationMap)
+            {
+                Logger.Information("Reading OUs from AD");
+                OuAffiliationMap = ReadOrgUnits();
+                Logger.Information("Found " + OuAffiliationMap.Count + " ous with an affiliation property set");
+            }
 
             using (var directoryEntry = GenerateDirectoryEntry())
             {
@@ -65,7 +78,7 @@ namespace SOFDCoreAD.Service.ActiveDirectory
                                 if (searchResult.Path.EndsWith(excludedOU))
                                 {
                                     inExcludedOU = true;
-                                    Logger.Information("User  " + searchResult.Path + " will not be synced, was in excluded orgUnit");
+                                    Logger.Verbose("User  " + searchResult.Path + " will not be synced, was in excluded orgUnit");
                                     break;
                                 }
                             }
@@ -125,7 +138,7 @@ namespace SOFDCoreAD.Service.ActiveDirectory
                                     if (searchResult.Path.EndsWith(excludedOU))
                                     {
                                         inExcludedOU = true;
-                                        Logger.Information("User  " + searchResult.Path + " will not be synced, was in excluded orgUnit");
+                                        Logger.Verbose("User  " + searchResult.Path + " will not be synced, was in excluded orgUnit");
                                         break;
                                     }
                                 }
@@ -325,7 +338,8 @@ namespace SOFDCoreAD.Service.ActiveDirectory
                 Deleted = properties.GetValue<Boolean>(propertyResolver.DeletedProperty, false),
                 Disabled = treatDisabledAsEnabled ? false : (accountControlValue & AccountDisable) == AccountDisable,
                 UPN = properties.GetValue<String>(propertyResolver.UPNProperty, null),
-                Photo = properties.GetValue<byte[]>(propertyResolver.PhotoProperty, null)
+                Photo = properties.GetValue<byte[]>(propertyResolver.PhotoProperty, null),
+                AffiliationStopDate = properties.GetValue<String>(propertyResolver.AffiliationStopDateProperty, null)
             };
 
             var created = properties.GetValue<DateTime?>(propertyResolver.WhenCreatedProperty, null);
@@ -485,6 +499,25 @@ namespace SOFDCoreAD.Service.ActiveDirectory
                 }
             }
 
+            // if we load affiliations from OUs, and none is set on the user, see if we have a match
+            if (string.IsNullOrEmpty(adUser.Affiliation) && useOuAffiliationMap)
+            {
+                string dn = properties.GetValue<String>("distinguishedName", null);
+                if (!string.IsNullOrEmpty(dn))
+                {
+                    int idx = dn.IndexOf(",");
+                    if (idx >= 0)
+                    {
+                        dn = dn.Substring(idx + 1);
+                    }
+
+                    if (OuAffiliationMap.ContainsKey(dn))
+                    {
+                        adUser.Affiliation = OuAffiliationMap[dn];
+                    }
+                }
+            }
+
             return adUser;
         }
 
@@ -541,6 +574,42 @@ namespace SOFDCoreAD.Service.ActiveDirectory
             }
 
             adUsers = distinctUserList.Values.ToList();
+        }
+
+        public Dictionary<string, string> ReadOrgUnits()
+        {
+            Dictionary<string, string> orgUnits = new Dictionary<string, string>();
+
+            using (DirectoryEntry startingPoint = new DirectoryEntry())
+            {
+                using (DirectorySearcher searcher = new DirectorySearcher())
+                {
+                    searcher.PageSize = 500;
+                    searcher.Filter = "(objectCategory=organizationalUnit)";
+                    searcher.PropertiesToLoad.Add(ouAffiliationProperty);
+                    searcher.PropertiesToLoad.Add("distinguishedname");
+
+                    using (var resultSet = searcher.FindAll())
+                    {
+                        foreach (SearchResult res in resultSet)
+                        {
+                            string dn = (string)res.Properties["distinguishedname"][0];
+                            string affiliation = null;
+                            if (res.Properties.Contains(ouAffiliationProperty))
+                            {
+                                affiliation = (string)res.Properties[ouAffiliationProperty][0];
+                            }
+
+                            if (!string.IsNullOrEmpty(dn) && !string.IsNullOrEmpty(affiliation))
+                            {
+                                orgUnits.Add(dn, affiliation);
+                            }
+                        }
+                    }
+                }
+            }
+
+            return orgUnits;
         }
     }
 }
