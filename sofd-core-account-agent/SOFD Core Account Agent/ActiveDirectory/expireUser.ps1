@@ -1,4 +1,4 @@
-﻿$ScriptName = "createUser.ps1"
+﻿$ScriptName = "expireUser.ps1"
 $LogDir = "c:/logs/sofd core powershell"
 $LogFile = "$($LogDir)/$($ScriptName).log"
 $MaxLogLines = 10000
@@ -31,18 +31,24 @@ function Invoke-Method {
 	param(
         [string] $SAMAccountName = $(throw "Please specify a sAMAccountName."),
         [string] $Name = $(throw "Please specify a name."),
-        [string] $Uuid = $(throw "Please specify a uuid."),
-        [string] $DC = $(throw "Please specify a DC"),
-		[string] $OptionalJson,
-        [string] $OrderedBy,
+		[string] $Uuid = $(throw "Please specify a uuid."),
+		[string] $DC = $(throw "Please specify a DC"),
+		[datetime] $Date
 	)
     Log "Executing $($ScriptName)"
-    Log "Parameters: $($SAMAccountName), $($Name), $($Uuid), $($DC), $($OptionalJson), $($OrderedBy)"
+    Log "Parameters: $($SAMAccountName), $($Name), $($Uuid), $($DC), $($Date)"
 	
     try
     {        
         # *** begin custom logic ***
-        Log "Custom changes here"
+        if( $null -ne $Date )
+        {
+            Log "AccountExpiration was set"
+        }
+        else
+        {
+            Log "AccountExpiration was removed"
+        }
         # *** end custom logic ***
     }
     catch

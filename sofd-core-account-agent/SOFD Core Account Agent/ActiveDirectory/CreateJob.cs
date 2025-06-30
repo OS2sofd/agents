@@ -22,7 +22,9 @@ namespace SOFD
         private static string defaultUPNDomain = Properties.Settings.Default.DefaultUPNDomain;
         private static string alternativeUPNDomains = Properties.Settings.Default.AlternativeUPNDomains;
         private static List<string> existingAccountExcludeOUs = String.IsNullOrEmpty(Properties.Settings.Default.ExistingAccountExcludeOUs) ? new List<string>() : Properties.Settings.Default.ExistingAccountExcludeOUs.Split(';').ToList();
-
+        private static string ignoredDcPrefix = Properties.Settings.Default.IgnoredDCPrefix;
+        private static string activeDirectoryUserIdGroupings = Properties.Settings.Default.ActiveDirectoryUserIdGroupings;
+        private static bool failReactivateOnMultipleDisabled = Properties.Settings.Default.ActiveDirectoryFailReactivateOnMultipleDisabled;
         private SOFDOrganizationService organizationService;
         private PowershellRunner powershellRunner;
 
@@ -61,7 +63,10 @@ namespace SOFD
                 uPNChoice = uPNChoice,
                 defaultUPNDomain = defaultUPNDomain,
                 alternativeUPNDomains = alternativeUPNDomains,
-                existingAccountExcludeOUs = existingAccountExcludeOUs
+                existingAccountExcludeOUs = existingAccountExcludeOUs,
+                ignoredDcPrefix = ignoredDcPrefix,
+                activeDirectoryUserIdGroupings = activeDirectoryUserIdGroupings,
+                failReactivateOnMultipleDisabled = failReactivateOnMultipleDisabled
             }, adLogger, organizationService);
             
             foreach (var order in response.pendingOrders)
@@ -85,16 +90,14 @@ namespace SOFD
                         string uuid = order.person.uuid;
                         string sAMAccountName = status.affectedUserId;
                         string optionalJson = order.optionalJson;
+                        string orderedBy = order.orderedBy;
+                        if (!string.IsNullOrEmpty(optionalJson))
+                        {
+                            // make sure to backtick escape quotes for the json parameter
+                            optionalJson = optionalJson.Replace("\"", "`\"");
+                        }
 
-                        try
-                        {
-                            log.Information("Invoke powershell with arguments: " + sAMAccountName + ", " + name + ", " + uuid + ", " + processOrderStatus.DC);
-                            powershellRunner.Run(sAMAccountName, name, uuid,null, processOrderStatus.DC, optionalJson);
-                        }
-                        catch (Exception ex)
-                        {
-                            log.Warning("Failed to run powershell for " + sAMAccountName, ex);
-                        }
+                        powershellRunner.Run(sAMAccountName, name, uuid,null, processOrderStatus.DC, optionalJson, null, orderedBy);
                     }
                 }
                 catch (Exception ex)

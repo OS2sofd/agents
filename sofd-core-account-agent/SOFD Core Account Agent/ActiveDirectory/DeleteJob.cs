@@ -19,6 +19,8 @@ namespace SOFD
         private static string adAttributeCpr = Properties.Settings.Default.ActiveDirectoryAttributeCpr;
         private static string adAttributeEmployeeId = Properties.Settings.Default.ActiveDirectoryAttributeEmployeeId;
         private static List<string> existingAccountExcludeOUs = String.IsNullOrEmpty(Properties.Settings.Default.ExistingAccountExcludeOUs) ? new List<string>() : Properties.Settings.Default.ExistingAccountExcludeOUs.Split(';').ToList();
+        private static string ignoredDcPrefix = Properties.Settings.Default.IgnoredDCPrefix;
+        private static bool powershellFirst = Properties.Settings.Default.ActiveDirectoryDeletePowershellBeforeDelete;
 
         private SOFDOrganizationService organizationService;
         private PowershellRunner powershellRunner;
@@ -53,7 +55,8 @@ namespace SOFD
                 attributeCpr = adAttributeCpr,
                 attributeEmployeeId = adAttributeEmployeeId,
                 allowEnablingWithoutEmployeeIdMatch = response.singleAccount,
-                existingAccountExcludeOUs = new List<String>() // exclusion should not be used when deleting account
+                existingAccountExcludeOUs = new List<String>(), // exclusion should not be used when deleting account
+                ignoredDcPrefix = ignoredDcPrefix
             }, adLogger, organizationService);
 
             foreach (var order in response.pendingOrders)
@@ -63,28 +66,34 @@ namespace SOFD
 
                 try
                 {
-                    var processOrderStatus = activeDirectoryService.ProcessDeleteOrder(order);
-
                     log.Information("Deleting account for " + order.person.firstname + " " + order.person.surname + ": " + order.userId);
+
+                    // execute powershell before actually deleting account (DC will not be available)
+                    if (powershellFirst)
+                    {
+                        if (this.powershellRunner != null)
+                        {
+                            string name = order.person.firstname + " " + order.person.surname;
+                            string uuid = order.person.uuid;
+                            string sAMAccountName = order.userId;
+                            powershellRunner.Run(sAMAccountName, name, uuid, null, "NA", null, null, null);
+                        }
+                    }
+
+                    var processOrderStatus = activeDirectoryService.ProcessDeleteOrder(order);
 
                     status.status = processOrderStatus.status;
                     status.affectedUserId = processOrderStatus.sAMAccountName;
 
-                    // execute powershell
-                    if (this.powershellRunner != null)
+                    // execute powershell after actually deleting account (DC will be available)
+                    if (!powershellFirst)
                     {
-                        string name = order.person.firstname + " " + order.person.surname;
-                        string uuid = order.person.uuid;
-                        string sAMAccountName = status.affectedUserId;
-
-                        try
+                        if (this.powershellRunner != null)
                         {
-                            log.Information("Invoke powershell with arguments: " + sAMAccountName + ", " + name + ", " + uuid + ", " + processOrderStatus.DC);
-                            powershellRunner.Run(sAMAccountName, name, uuid, null, processOrderStatus.DC);
-                        }
-                        catch (Exception ex)
-                        {
-                            log.Warning("Failed to run powershell for " + sAMAccountName, ex);
+                            string name = order.person.firstname + " " + order.person.surname;
+                            string uuid = order.person.uuid;
+                            string sAMAccountName = status.affectedUserId;
+                            powershellRunner.Run(sAMAccountName, name, uuid, null, processOrderStatus.DC, null, null, null);
                         }
                     }
                 }

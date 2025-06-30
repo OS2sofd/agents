@@ -14,7 +14,7 @@ namespace SOFD
             this.powershellScript = powershellScript;
         }
 
-        public void Run(string sAMAccountName, string name, string uuid, string emailAlias, string dc, string optionalJson = null)
+        public void Run(string sAMAccountName, string name, string uuid, string emailAlias, string dc, string optionalJson, string date, string orderedBy)
         {
             string script = null;
             try
@@ -25,34 +25,40 @@ namespace SOFD
                 {
                     using (PowerShell powershell = PowerShell.Create())
                     {
-                        script += "\n\n" +
-                            "$ppArg1=\"" + sAMAccountName + "\"\n" +
-                            "$ppArg2=\"" + name + "\"\n" +
-                            "$ppArg3=\"" + uuid + "\"\n" +
-                            "$ppArg4=\"" + (emailAlias == null ? "" : emailAlias) + "\"\n" +
-                            "$ppArg5=\"" + dc + "\"\n" +
-                            "$ppArg6='" + (optionalJson == null ? "" : optionalJson) + "'\n";
-
-                        script += "\nInvoke-Method -SAMAccountName $ppArg1 -Name $ppArg2 -Uuid $ppArg3";
+                        var invokeCommand = "Invoke-Method";
+                        invokeCommand += $" -SAMAccountName \"{sAMAccountName}\"";
+                        invokeCommand += $" -Name \"{name}\"";
+                        invokeCommand += $" -Uuid \"{uuid}\"";                        
 
                         if (!string.IsNullOrEmpty(emailAlias))
                         {
-                            script += " -EmailAlias $ppArg4";
+                            invokeCommand += $" -EmailAlias \"{emailAlias}\"";
                         }
 
                         if (!string.IsNullOrEmpty(dc))
                         {
-                            script += " -DC $ppArg5";
+                            invokeCommand += $" -DC \"{dc}\"";
                         }
 
                         if (!string.IsNullOrEmpty(optionalJson))
                         {
-                            script += " -optionalJson $ppArg6";
+                            invokeCommand += $" -OptionalJson \"{optionalJson}\"";
+                        }
+                        
+                        if (!string.IsNullOrEmpty(date))
+                        {
+                            invokeCommand += $" -Date \"{date}\"";
                         }
 
-                        script += "\n";
+                        if (!string.IsNullOrEmpty(orderedBy))
+                        {
+                            invokeCommand += $" -OrderedBy \"{orderedBy}\"";
+                        }
+
+                        script += $"\n\n{invokeCommand}\n";
 
                         powershell.AddScript(script);
+                        log.Information($"Invoking powershell {powershellScript}:\n{invokeCommand}");
                         powershell.Invoke();
                     }
                 }

@@ -18,12 +18,19 @@ namespace SOFD
 
         private static string adAttributeCpr = Properties.Settings.Default.ActiveDirectoryAttributeCpr;
         private static List<string> existingAccountExcludeOUs = String.IsNullOrEmpty(Properties.Settings.Default.ExistingAccountExcludeOUs) ? new List<string>() : Properties.Settings.Default.ExistingAccountExcludeOUs.Split(';').ToList();
+        private static string ignoredDcPrefix = Properties.Settings.Default.IgnoredDCPrefix;
 
         private SOFDOrganizationService organizationService;
+        private PowershellRunner powershellRunner;
+
 
         public ExpireJob()
         {
             this.organizationService = new SOFDOrganizationService(Properties.Settings.Default.SofdUrl, PAMService.GetApiKey());
+            if (!string.IsNullOrEmpty(Properties.Settings.Default.ActiveDirectoryExpirePowershell))
+            {
+                this.powershellRunner = new PowershellRunner(Properties.Settings.Default.ActiveDirectoryExpirePowershell);
+            }
         }
 
         public void Execute()
@@ -44,7 +51,8 @@ namespace SOFD
 
             ActiveDirectoryAccountService activeDirectoryService = new ActiveDirectoryAccountService(new ActiveDirectoryConfig() {
                 attributeCpr = adAttributeCpr,
-                existingAccountExcludeOUs = new List<String>() // exclusion should not be used when expiring account
+                existingAccountExcludeOUs = new List<String>(), // exclusion should not be used when expiring account
+                ignoredDcPrefix = ignoredDcPrefix
             }, adLogger, organizationService);
 
             foreach (var order in response.pendingOrders)
@@ -60,6 +68,17 @@ namespace SOFD
 
                     status.status = processOrderStatus.status;
                     status.affectedUserId = processOrderStatus.sAMAccountName;
+
+                    // Run powershell
+                    if (this.powershellRunner != null) 
+                    {
+                        string name = order.person.firstname + " " + order.person.surname;
+                        string uuid = order.person.uuid;
+                        string sAMAccountName = status.affectedUserId;
+                        string endDate = order.endDate.HasValue ? order.endDate.Value.ToString("yyyy-MM-dd") : null;
+                        string domainController = processOrderStatus.DC;
+                        powershellRunner.Run(sAMAccountName, name, uuid, null, domainController, null, endDate, null);
+                    }
                 }
                 catch (Exception ex)
                 {

@@ -17,6 +17,7 @@ namespace Active_Directory
         private string alternativeUPNDomains = "";
         private SOFDOrganizationService organizationService;
         private Regex rx = new Regex("^vik\\d{4}$");
+        private bool failReactivateOnMultipleDisabled = false;
 
 
         public ActiveDirectoryAccountService(ActiveDirectoryConfig config, ILogger log, SOFDOrganizationService organizationService) : base(config, log)
@@ -26,7 +27,7 @@ namespace Active_Directory
             this.defaultUPNDomain = config.defaultUPNDomain;
             this.alternativeUPNDomains = config.alternativeUPNDomains;
             this.organizationService = organizationService;
-
+            this.failReactivateOnMultipleDisabled = config.failReactivateOnMultipleDisabled;
         }
 
         public ProcessStatus ProcessDisableOrder(AccountOrder order)
@@ -93,8 +94,8 @@ namespace Active_Directory
             bool createNewAccount = true;
 
             // find all existing accounts with the supplied cpr (twice, one with and one without dash)
-            List<AccountStatus> existingAccounts = GetAccountStatiByCpr(order.person.cpr);
-            List<AccountStatus> extraExistingAccounts = GetAccountStatiByCpr(GetCprWithDash(order.person.cpr));
+            List<AccountStatus> existingAccounts = GetAccountStatiByCpr(order.userId, order.person.cpr);
+            List<AccountStatus> extraExistingAccounts = GetAccountStatiByCpr(order.userId, GetCprWithDash(order.person.cpr));
             existingAccounts.AddRange(extraExistingAccounts);
 
             foreach (var existingAccount in existingAccounts)
@@ -154,6 +155,34 @@ namespace Active_Directory
         {
             ProcessStatus result = new ProcessStatus();
             result.status = Constants.REACTIVATED;
+
+            // if there are multiple disabled AD accounts, some municipalies do not want to just pick a random one
+            // to reactivate - instead they want a failed create, so they can manually pick which one to use
+            if (failReactivateOnMultipleDisabled)
+            {
+                // count disabled accounts
+                List<string> disabledAccounts = new List<string>();
+                foreach (var existingAccount in existingAccounts)
+                {
+                    // skip any account with a username like vikXXXX as those are substitute accounts
+                    string existingAccountUserId = existingAccount.sAMAccountName.ToLower();
+                    if (rx.IsMatch(existingAccountUserId))
+                    {
+                        continue;
+                    }
+
+                    if (existingAccount.disabled)
+                    {
+                        disabledAccounts.Add(existingAccount.sAMAccountName);
+                    }
+                }
+
+                // abort if there are more than 1 - some human must decide which one to reactivate
+                if (disabledAccounts.Count > 1)
+                {
+                    throw new Exception("Kan ikke reaktivere en AD konto - der er flere spærrede AD konto at vælge mellem: " + string.Join(",", disabledAccounts));
+                }
+            }
 
             foreach (var existingAccount in existingAccounts)
             {
@@ -240,30 +269,39 @@ namespace Active_Directory
 
         private ProcessStatus ExpireAccount(string userId, DateTime? endDate)
         {
-            PrincipalContext ctx = new PrincipalContext(ContextType.Domain);
-
-            UserPrincipal user = UserPrincipal.FindByIdentity(ctx, userId);
-            if (user != null)
+            // hack to pick a DC to expire against
+            var wrapper = GenerateDirectoryEntry();
+            using (wrapper.Entry)
             {
-                if (endDate != null)
-                {
-                    DateTime dt = (DateTime) (endDate);
-                    DateTime actualExpire = new DateTime(dt.Year, dt.Month, dt.Day, 3, 0, 0); // ensure timezone stuff doesn't hurt us
+                log.Information("Attempting to expire AD account: " + userId + " through " + wrapper.DC);
+            }
 
-                    user.AccountExpirationDate = actualExpire;
+            using (PrincipalContext ctx = new PrincipalContext(ContextType.Domain, wrapper.DC))
+            {
+                UserPrincipal user = UserPrincipal.FindByIdentity(ctx, userId);
+                if (user != null)
+                {
+                    if (endDate != null)
+                    {
+                        DateTime dt = (DateTime)(endDate);
+                        DateTime actualExpire = new DateTime(dt.Year, dt.Month, dt.Day, 3, 0, 0); // ensure timezone stuff doesn't hurt us
+
+                        user.AccountExpirationDate = actualExpire;
+                    }
+                    else
+                    {
+                        user.AccountExpirationDate = null;
+                    }
+
+                    user.Save();
+
+                    return new ProcessStatus()
+                    {
+                        status = Constants.EXPIRED,
+                        sAMAccountName = userId,
+                        DC = wrapper.DC
+                    };
                 }
-                else
-                {
-                    user.AccountExpirationDate = null;
-                }
-
-                user.Save();
-
-                return new ProcessStatus()
-                {
-                    status = Constants.EXPIRED,
-                    sAMAccountName = userId
-                };
             }
 
             return null;

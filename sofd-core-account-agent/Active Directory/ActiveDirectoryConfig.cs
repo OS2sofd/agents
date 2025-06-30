@@ -14,6 +14,10 @@ namespace Active_Directory
         public string uPNChoice { get; set; }
         public string defaultUPNDomain { get; set; }
         public string alternativeUPNDomains { get; set; }
+        public string ignoredDcPrefix { get; set; }
+        public string activeDirectoryUserIdGroupings { get; set; }
+        public bool failReactivateOnMultipleDisabled { get; set; }
+
 
         public List<string> existingAccountExcludeOUs;
     }

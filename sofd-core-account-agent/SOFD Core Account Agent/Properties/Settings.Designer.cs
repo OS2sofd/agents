@@ -12,7 +12,7 @@ namespace SOFD.Properties {
     
     
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.VisualStudio.Editors.SettingsDesigner.SettingsSingleFileGenerator", "17.8.0.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.VisualStudio.Editors.SettingsDesigner.SettingsSingleFileGenerator", "17.9.0.0")]
     internal sealed partial class Settings : global::System.Configuration.ApplicationSettingsBase {
         
         private static Settings defaultInstance = ((Settings)(global::System.Configuration.ApplicationSettingsBase.Synchronized(new Settings())));
@@ -187,15 +187,6 @@ namespace SOFD.Properties {
         
         [global::System.Configuration.ApplicationScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("employeeNumber")]
-        public string ActiveDirectoryAttributeEmployeeId {
-            get {
-                return ((string)(this["ActiveDirectoryAttributeEmployeeId"]));
-            }
-        }
-        
-        [global::System.Configuration.ApplicationScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("OU=Users,DC=kommune,DC=dk")]
         public string ActiveDirectoryUserOU {
             get {
@@ -227,6 +218,15 @@ namespace SOFD.Properties {
         public string ActiveDirectoryDeletePowershell {
             get {
                 return ((string)(this["ActiveDirectoryDeletePowershell"]));
+            }
+        }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool ActiveDirectoryDeletePowershellBeforeDelete {
+            get {
+                return ((bool)(this["ActiveDirectoryDeletePowershellBeforeDelete"]));
             }
         }
         
@@ -345,6 +345,51 @@ namespace SOFD.Properties {
         public bool CyberArkEnabled {
             get {
                 return ((bool)(this["CyberArkEnabled"]));
+            }
+        }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string IgnoredDCPrefix {
+            get {
+                return ((string)(this["IgnoredDCPrefix"]));
+            }
+        }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("ActiveDirectory\\expireJob.ps1")]
+        public string ActiveDirectoryExpirePowershell {
+            get {
+                return ((string)(this["ActiveDirectoryExpirePowershell"]));
+            }
+        }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string ActiveDirectoryAttributeEmployeeId {
+            get {
+                return ((string)(this["ActiveDirectoryAttributeEmployeeId"]));
+            }
+        }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string ActiveDirectoryUserIdGroupings {
+            get {
+                return ((string)(this["ActiveDirectoryUserIdGroupings"]));
+            }
+        }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool ActiveDirectoryFailReactivateOnMultipleDisabled {
+            get {
+                return ((bool)(this["ActiveDirectoryFailReactivateOnMultipleDisabled"]));
             }
         }
     }

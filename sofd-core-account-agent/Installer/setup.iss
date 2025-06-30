@@ -36,7 +36,9 @@ Source: "*.pdb"; DestDir: "{app}"; Flags: ignoreversion
 Source: "SOFD Core User Agent.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "SOFD Core User Agent.exe.config"; DestDir: "{app}"; Flags: ignoreversion onlyifdoesntexist
 Source: "ActiveDirectory\*"; DestDir: "{app}\ActiveDirectory"; Flags: ignoreversion onlyifdoesntexist
+Source: "ActiveDirectory\*"; DestDir: "{app}\ActiveDirectory\Templates"; Flags: ignoreversion
 Source: "Exchange\*"; DestDir: "{app}\Exchange"; Flags: ignoreversion onlyifdoesntexist
+Source: "Exchange\*"; DestDir: "{app}\Exchange\Templates"; Flags: ignoreversion
 Source: "InternalPowershell\*"; DestDir: "{app}\InternalPowershell"; Flags: ignoreversion
 
 [Run]

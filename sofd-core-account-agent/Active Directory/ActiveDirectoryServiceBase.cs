@@ -4,6 +4,7 @@ using System.DirectoryServices;
 using System.DirectoryServices.ActiveDirectory;
 using Serilog;
 using System.Linq;
+using Serilog.Core;
 
 namespace Active_Directory
 {
@@ -53,7 +54,7 @@ namespace Active_Directory
         {
             var filter = string.Format("(&(objectClass=user)(objectClass=person)(sAMAccountName={0}))", sAMAccountName);
 
-            var result = GetAccountStatus(filter);
+            var result = GetAccountStatus(null, filter);
 
             if (result.Count > 0)
             {
@@ -63,16 +64,33 @@ namespace Active_Directory
             return null;
         }
 
-        protected List<AccountStatus> GetAccountStatiByCpr(string cpr)
+        protected List<AccountStatus> GetAccountStatiByCpr(string requestedUserId, string cpr)
         {
             var filter = string.Format("(&(objectClass=user)(objectClass=person)({0}={1}))", config.attributeCpr, cpr);
 
-            return GetAccountStatus(filter);
+            return GetAccountStatus(requestedUserId, filter);
         }
 
-        protected List<AccountStatus> GetAccountStatus(string filter)
+        protected List<AccountStatus> GetAccountStatus(string requestedUserId, string filter)
         {
             var stati = new List<AccountStatus>();
+
+            // filter out any accounts that does not match the requested prefix
+            // e.g. if we want to create an account with the name XXABCD and the groupings below contains XX, then
+            // will not only attempt to reactivate accounts that starts with XX, and ignore any others
+            string prefixRequirement = null;
+            if (!string.IsNullOrEmpty(requestedUserId) && !string.IsNullOrEmpty(config.activeDirectoryUserIdGroupings))
+            {
+                string userId = requestedUserId.ToLower();
+                string[] prefixes = config.activeDirectoryUserIdGroupings.ToLower().Split(';');
+                foreach (string prefix in prefixes)
+                {
+                    if (userId.StartsWith(prefix))
+                    {
+                        prefixRequirement = prefix;
+                    }
+                }
+            }
 
             var wrapper = GenerateDirectoryEntry();
             using (DirectoryEntry entry = wrapper.Entry)
@@ -95,7 +113,7 @@ namespace Active_Directory
                             var result = searchResult[counter];
 
                             // ignore existing user if it is in an excluded OU
-                            if( config.existingAccountExcludeOUs.Any(excludedOU => !String.IsNullOrEmpty(excludedOU) && result.Path.ToLower().EndsWith( excludedOU.ToLower().Trim())) )
+                            if (config.existingAccountExcludeOUs.Any(excludedOU => !String.IsNullOrEmpty(excludedOU) && result.Path.ToLower().EndsWith( excludedOU.ToLower().Trim())))
                             {
                                 log.Debug($"Ignoring existing user {result.Path} because it is in an excluded OU");
                                 continue;
@@ -137,7 +155,14 @@ namespace Active_Directory
                                 }
                             }
 
-                            stati.Add(status);
+                            if (prefixRequirement != null && !status.sAMAccountName.ToLower().StartsWith(prefixRequirement))
+                            {
+                                log.Debug("Skiping " + status.sAMAccountName + " because it does not start with " + prefixRequirement);
+                            }
+                            else
+                            {
+                                stati.Add(status);
+                            }
                         }
                     }
                 }
@@ -153,6 +178,12 @@ namespace Active_Directory
             {
                 try
                 {
+                    if (!string.IsNullOrEmpty(config.ignoredDcPrefix) && controller.Name.StartsWith(config.ignoredDcPrefix))
+                    {
+                        log.Verbose("Skipping " + controller.Name);
+                        continue;
+                    }
+
                     var dc = controller.Name;
                     var directoryEntry = new DirectoryEntry(string.Format("LDAP://{0}", dc));
 

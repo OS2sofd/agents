@@ -84,7 +84,7 @@ namespace SOFD_Core
                 IRestResponse<AccountOrderResponse> response = client.Execute<AccountOrderResponse>(request);
                 if (!response.StatusCode.Equals(HttpStatusCode.OK))
                 {
-                    throw new Exception("Failed to get pending orders!");
+                    throw new Exception("Failed to get pending orders!  status: " + response.StatusCode + "     \n" + response.ErrorMessage);
                 }
 
                 if (result == null)

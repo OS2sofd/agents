@@ -20,6 +20,7 @@ namespace SOFD
         private static bool onlyPowershell = Properties.Settings.Default.ExchangeOnlyPowershell;
         private static string defaultDomain = Properties.Settings.Default.ExchangeDefaultMailDomain;
         private static string customDomains = Properties.Settings.Default.ExchangeCustomMailDomains;
+        private static string ignoredDcPrefix = Properties.Settings.Default.IgnoredDCPrefix;
         private SOFDOrganizationService organizationService;
         private PowershellRunner createPowershellRunner;
         private PowershellRunner deactivatePowershellRunner;
@@ -126,15 +127,7 @@ namespace SOFD
 
                     if (this.deactivatePowershellRunner != null)
                     {
-                        try
-                        {
-                            log.Information("Invoke powershell with arguments: " + order.linkedUserId + ", " + name + ", " + order.person.uuid + ", NULL, " + order.userId);
-                            deactivatePowershellRunner.Run(order.linkedUserId, name, order.person.uuid, "", order.userId);
-                        }
-                        catch (Exception ex)
-                        {
-                            log.Warning("Failed to run powershell for " + order.userId, ex);
-                        }
+                        deactivatePowershellRunner.Run(order.linkedUserId, name, order.person.uuid, order.userId, null, null, null, null);
                     }
                 }
                 catch (Exception ex)
@@ -161,7 +154,8 @@ namespace SOFD
                 Properties.Settings.Default.ExchangeUsePSSnapin,
                 exchangeLogger);
 
-            var activeDirectoryService = new ActiveDirectoryAttributeService(new ActiveDirectoryConfig(), adLogger);
+            var activeDirectoryService = new ActiveDirectoryAttributeService(new ActiveDirectoryConfig() {
+                ignoredDcPrefix = ignoredDcPrefix }, adLogger);
 
             foreach (var order in response.pendingOrders)
             {
@@ -193,15 +187,7 @@ namespace SOFD
 
                     if (this.createPowershellRunner != null)
                     {
-                        try
-                        {
-                            log.Information("Invoke powershell with arguments: " + order.linkedUserId + ", " + name + ", " + order.person.uuid + ", " + emailAlias + ", " + dc);
-                            createPowershellRunner.Run(order.linkedUserId, name, order.person.uuid, emailAlias, dc);
-                        }
-                        catch (Exception ex)
-                        {
-                            log.Warning("Failed to run powershell for " + order.userId, ex);
-                        }
+                        createPowershellRunner.Run(order.linkedUserId, name, order.person.uuid, emailAlias, dc, null, null, null);
                     }
                 }
                 catch (Exception ex)

@@ -12,11 +12,12 @@ namespace SOFD
     public class DeactivateJob
     {
         private static ILogger adLogger = new LoggerConfiguration().ReadFrom.AppSettings().CreateLogger().ForContext(typeof(ActiveDirectoryAccountService));
-        private static ILogger log = new LoggerConfiguration().ReadFrom.AppSettings().CreateLogger().ForContext(typeof(DeleteJob));
+        private static ILogger log = new LoggerConfiguration().ReadFrom.AppSettings().CreateLogger().ForContext(typeof(DeactivateJob));
 
         private static string adAttributeCpr = Properties.Settings.Default.ActiveDirectoryAttributeCpr;
         private static string adAttributeEmployeeId = Properties.Settings.Default.ActiveDirectoryAttributeEmployeeId;
         private static List<string> existingAccountExcludeOUs = String.IsNullOrEmpty(Properties.Settings.Default.ExistingAccountExcludeOUs) ? new List<string>() : Properties.Settings.Default.ExistingAccountExcludeOUs.Split(';').ToList();
+        private static string ignoredDcPrefix = Properties.Settings.Default.IgnoredDCPrefix;
 
         private SOFDOrganizationService organizationService;
         private PowershellRunner powershellRunner;
@@ -51,7 +52,8 @@ namespace SOFD
                 attributeCpr = adAttributeCpr,
                 attributeEmployeeId = adAttributeEmployeeId,
                 allowEnablingWithoutEmployeeIdMatch = response.singleAccount,
-                existingAccountExcludeOUs = new List<String>() // exclusion should not be used when disabling account
+                existingAccountExcludeOUs = new List<String>(), // exclusion should not be used when disabling account
+                ignoredDcPrefix = ignoredDcPrefix
             }, adLogger, organizationService);
 
             foreach (var order in response.pendingOrders)
@@ -74,16 +76,7 @@ namespace SOFD
                         string name = order.person.firstname + " " + order.person.surname;
                         string uuid = order.person.uuid;
                         string sAMAccountName = status.affectedUserId;
-
-                        try
-                        {
-                            log.Information("Invoke powershell with arguments: " + sAMAccountName + ", " + name + ", " + uuid + ", " + processOrderStatus.DC);
-                            powershellRunner.Run(sAMAccountName, name, uuid, null, processOrderStatus.DC);
-                        }
-                        catch (Exception ex)
-                        {
-                            log.Warning("Failed to run powershell for " + sAMAccountName, ex);
-                        }
+                        powershellRunner.Run(sAMAccountName, name, uuid, null, processOrderStatus.DC, null, null, null);
                     }
                 }
                 catch (Exception ex)
