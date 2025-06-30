@@ -9,5 +9,6 @@
         public string UserType { get; set; }
         public string EmployeeId { get; set; }
         public bool Disabled { get; set; }
+        public bool Prime { get; set; }
     }
 }

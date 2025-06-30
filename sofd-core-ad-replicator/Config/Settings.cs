@@ -10,7 +10,6 @@ namespace sofd_core_ad_replicator.Config
         public JobSettings JobSettings { get; set; } = new JobSettings();
         public ActiveDirectorySettings ActiveDirectorySettings { get; set; }
         public SofdSettings SofdSettings { get; set; }
-
         public PAMSettings PAMSettings { get; set; }
     }
 }

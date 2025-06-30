@@ -11,3 +11,21 @@
 2024-09-19 1.6.1 - Added some logging
 2024-10-15 1.6.2 - Fix issue with special characters in OU names when renaming/moving
 2024-10-19 1.7.0 - Added support for powershell scripts
+2024-11-25 1.8.0 - Can now exclude external users in config
+2024-12-20 1.9.0 - Added configuration setting for OUs that users cannot be moved away from
+2025-02-10 1.9.1 - Fixed powershell assembly dependency
+2025-03-04 1.10.1 - Handle bouble-up for users that are in excluded OUs
+2025-03-11 1.11.0 - Simulation mode for OUs
+2025-05-05 1.12.0 - Support for creating and maintaining OU groups
+2025-05-07 1.12.2 - Fix bug in manager mapping for OU groups
+2025-05-08 1.12.3 - OU groups are now created as universal
+2025-05-09 1.12.4 - Respect employeeId on Users when creating OU group memberships
+2025-05-14 1.12.5 - Do not map disabled users to groups, and repect "arbejdssteder"
+2025-05-27 1.12.6 - Stop logging the full powershell script on execution
+2025-06-02 1.12.7 - Do not update groups inside groups ;)
+2025-06-02 1.12.8 - Fixed NPE error on group update on empty descriptions
+2025-06-03 1.12.9 - Fixed issue with changing sAMAccountName
+2025-06-03 1.12.10 - Only perform changes on group attributes when there are changes on that specific field
+2025-06-04 1.12.13 - Added configurable option for future affiliations included in group memberships
+2025-06-06 1.12.14 - Opdatering til gruppemedlemsskaber bør køre hurtigere nu
+2025-06.12 1.12.16 - Fix til grupper med MANGE medlemmer

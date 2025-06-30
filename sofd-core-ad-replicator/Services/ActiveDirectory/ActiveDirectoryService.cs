@@ -7,6 +7,7 @@ using System.DirectoryServices.AccountManagement;
 using System.IO;
 using System.Linq;
 using System.Management.Automation;
+using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 
 namespace sofd_core_ad_replicator.Services.ActiveDirectory
@@ -26,6 +27,8 @@ namespace sofd_core_ad_replicator.Services.ActiveDirectory
         private readonly string rootOrgUnitUuid; //deprecated
         private readonly bool dryRunMoveUsers;
         private readonly Dictionary<string, string> branchRootMap;
+        private readonly bool excludeExternalUsers;
+        private readonly bool testOURun;
 
         public ActiveDirectoryService(IServiceProvider sp) : base(sp)
         {
@@ -41,6 +44,8 @@ namespace sofd_core_ad_replicator.Services.ActiveDirectory
             dryRunMoveUsers = settings.ActiveDirectorySettings.DryRunMoveUsers;
             losIdField = settings.ActiveDirectorySettings.OptionalOUFields.LosIDField;
             branchRootMap = settings.SofdSettings.SOFDToADOrgUnitMap ?? new();
+            excludeExternalUsers = settings.ActiveDirectorySettings.ExcludeExternalUsers;
+            testOURun = settings.ActiveDirectorySettings.TestOURun;
         }
 
         public Dictionary<string, string> HandleOrgUnits(List<OrgUnit> allOrgUnits)
@@ -106,15 +111,29 @@ namespace sofd_core_ad_replicator.Services.ActiveDirectory
                         OrgUnit match = allOrgUnits.Where(i => i.Uuid.Equals(id)).FirstOrDefault();
                         if (match == null)
                         {
-                            MoveToDeletedOUs(ou);
+                            if (testOURun)
+                            {
+                                logger.LogWarning("SIMULATE: would have deleted " + ou.Name);
+                            }
+                            else
+                            {
+                                MoveToDeletedOUs(ou);
+                            }
                         }
                         else
                         {
                             // check if it has the excluded tag in sofd (or has inherited it)
                             if (match.ShouldBeExcluded)
                             {
-                                logger.LogInformation($"OrgUnit with sofd uuid {match.Uuid} and name {match.Name} has the excluded tag in sofd, but is already in Active Directory. Moving Active Directory OrgUnit to OrgUnit for deleted OrgUnits.");
-                                MoveToDeletedOUs(ou);
+                                if (testOURun)
+                                {
+                                    logger.LogWarning("SIMULATE: would have deleted " + ou.Name);
+                                }
+                                else
+                                {
+                                    logger.LogInformation($"OrgUnit with sofd uuid {match.Uuid} and name {match.Name} has the excluded tag in sofd, but is already in Active Directory. Moving Active Directory OrgUnit to OrgUnit for deleted OrgUnits.");
+                                    MoveToDeletedOUs(ou);
+                               }
                             }
                         }
                     }
@@ -140,7 +159,7 @@ namespace sofd_core_ad_replicator.Services.ActiveDirectory
             }
         }
 
-        internal void CheckForMove(Person person, User user, List<Affiliation> activeAffiliations, Dictionary<string, string> userLocations, Dictionary<string, string> orgUnitMap)
+        internal void CheckForMove(Person person, User user, List<Affiliation> activeAffiliations, Dictionary<string, string> userLocations, Dictionary<string, string> orgUnitMap, List<string> dontMoveUserFromTheseOUs, List<OrgUnit> orgUnitTree)
         {
             logger.LogDebug($"Checking if user with userId {user.UserId} should be moved");
 
@@ -151,6 +170,19 @@ namespace sofd_core_ad_replicator.Services.ActiveDirectory
             }
 
             string path = userLocations[user.UserId.ToLower()];
+
+            if (dontMoveUserFromTheseOUs != null && dontMoveUserFromTheseOUs.Count > 0)
+            {
+                string lowerPath = path.ToLower();
+                foreach (var ou in dontMoveUserFromTheseOUs)
+                {
+                    if (lowerPath.Contains(ou.ToLower()))
+                    {
+                        logger.LogDebug("Not moving " + user.UserId + " because user somewhere inside " + ou);
+                        return;
+                    }
+                }
+            }
 
             // find relevant affiliation
             Affiliation affiliation = activeAffiliations.Where(a => object.Equals(a.EmployeeId, user.EmployeeId)).FirstOrDefault();
@@ -163,12 +195,51 @@ namespace sofd_core_ad_replicator.Services.ActiveDirectory
                     return;
                 }
             }
+            // check if user is external and if configured to exclude external users
+            if (excludeExternalUsers && affiliation.AffiliationType == "EXTERNAL")
+            {
+                logger.LogDebug($"User with userId {user.UserId} will not be moved because external users are excluded.");
+                return;
+            }
 
             string affOUUuid = String.IsNullOrEmpty(affiliation.AlternativeOrgunitUuid) ? affiliation.OrgUnitUuid : affiliation.AlternativeOrgunitUuid;
             if (!orgUnitMap.ContainsKey(affOUUuid))
             {
-                logger.LogWarning($"Tried to find OrgUnit with id {affOUUuid} for affiliation with uuid {affiliation.Uuid}, but it could not be found with Active Directory - for user " + user.UserId);
-                return;
+                // find current ou in OrgUnitTree
+                bool foundParent = false;
+                OrgUnit currentOU = orgUnitTree.Where(ou => ou.Uuid == affOUUuid).FirstOrDefault();
+                if (currentOU != null)
+                {
+                    //Try to find a parent ou
+                    OrgUnit parentOU = currentOU.Parent;
+                    while (foundParent == false)
+                    {
+                        if (parentOU != null && orgUnitMap.ContainsKey(parentOU.Uuid))
+                        {
+                            logger.LogInformation($"Found alternative OrgUnit: {parentOU.Uuid}");
+                            affOUUuid = parentOU.Uuid;
+                            foundParent = true;
+                        } else
+                        {
+                            if (parentOU != null && parentOU.Parent != null)
+                            {
+                                parentOU = parentOU.Parent;
+                            }
+                            else
+                            {
+                                //no parent found. give up
+                                break;
+                            }
+                        }
+                    }
+                    
+                }
+
+                if (!foundParent)
+                {
+                    logger.LogWarning($"Tried to find OrgUnit with id {affOUUuid} for affiliation with uuid {affiliation.Uuid}, but it could not be found with Active Directory - for user " + user.UserId);
+                    return;
+                }
             }
 
             string dn = orgUnitMap[affOUUuid];
@@ -184,6 +255,394 @@ namespace sofd_core_ad_replicator.Services.ActiveDirectory
             {
                 MoveUser(user.UserId, path, dn);
             }
+        }
+
+        public void DeleteGroup(GroupDetails group)
+        {
+            if (settings.ActiveDirectorySettings.GroupSettings.DryRun)
+            {
+                logger.LogInformation("DRYRUN: deleting group " + group.Name);
+                return;
+            }
+
+            GroupPrincipal gp = GroupPrincipal.FindByIdentity(new PrincipalContext(ContextType.Domain), group.SamAccountName);
+            if (gp != null)
+            {
+                try
+                {
+                    logger.LogInformation("Deleting group " + group.Name);
+                    gp.Delete();
+                }
+                catch (Exception ex)
+                {
+                    logger.LogError(ex, "Could not delete group " + group.Name);
+                }
+            }
+        }
+
+        public void UpdateGroup(GroupDetails group, string name, string samAccountName, string description, string displayName, IEnumerable<string> members, Dictionary<string, string> userLocations)
+        {
+            try
+            {
+                bool changes = false;
+                bool samAccountNameChanges = false, descriptionChanges = false, displayNameChanges = false;
+                bool rename = false;
+                bool memberChanges = false;
+
+                if (name.Length > 63)
+                {
+                    name = name.Substring(0, 63).Trim();
+                }
+
+                if (!string.Equals(group.Name, name))
+                {
+                    logger.LogInformation("Group " + group.Name + " - set name to " + name);
+                    rename = true;
+                }
+
+                if (!string.Equals(group.SamAccountName, samAccountName))
+                {
+                    logger.LogInformation("Group " + group.Name + " - set samAccountName to " + samAccountName);
+                    changes = true;
+                    samAccountNameChanges = true;
+                }
+
+                if (!string.Equals(group.Description, description))
+                {
+                    logger.LogInformation("Group " + group.Name + " - set description to " + description);
+                    changes = true;
+                    descriptionChanges = true;
+                }
+
+                if (!string.Equals(group.DisplayName, displayName))
+                {
+                    logger.LogInformation("Group " + group.Name + " - set displayName to " + displayName);
+                    changes = true;
+                    displayNameChanges = true;
+                }
+
+                if (members != null && members.Count() > 0)
+                {
+                    members = members.Distinct();
+                }
+
+                // compare members
+                foreach (string member in group.Members)
+                {
+                    bool found = false;
+
+                    foreach (string shouldBeMember in members)
+                    {
+                        if (member.ToLower().Equals(shouldBeMember.ToLower()))
+                        {
+                            found = true;
+                            break;
+                        }
+                    }
+
+                    if (!found)
+                    {
+                        group.ToRemove.Add(member);
+                    }
+                }
+
+                foreach (string shouldBeMember in members)
+                {
+                    bool found = false;
+
+                    foreach (string member in group.Members)
+                    {
+                        if (member.ToLower().Equals(shouldBeMember.ToLower()))
+                        {
+                            found = true;
+                            break;
+                        }
+                    }
+
+                    if (!found)
+                    {
+                        group.ToAdd.Add(shouldBeMember);
+                    }
+                }
+
+                if (group.ToAdd.Count > 0 || group.ToRemove.Count > 0)
+                {
+                    logger.LogInformation("Group " + group.Name + " - has membership changes");
+
+                    logger.LogDebug("ToAdd: " + string.Join(", ", group.ToAdd));
+                    logger.LogDebug("ToRemove: " + string.Join(", ", group.ToRemove));
+
+                    memberChanges = true;
+                }
+
+                if (changes || rename || memberChanges)
+                {
+                    if (settings.ActiveDirectorySettings.GroupSettings.DryRun)
+                    {
+                        logger.LogInformation("DRYRUN: would have updated group " + group.Name);
+                    }
+                    else
+                    {
+                        GroupPrincipal gp = GroupPrincipal.FindByIdentity(new PrincipalContext(ContextType.Domain), group.SamAccountName);
+                        if (gp != null)
+                        {
+                            if (changes)
+                            {
+                                if (descriptionChanges)
+                                {
+                                    gp.Description = description;
+                                }
+
+                                if (displayNameChanges)
+                                {
+                                    gp.DisplayName = displayName;
+                                }
+
+                                if (samAccountNameChanges)
+                                {
+                                    gp.SamAccountName = samAccountName;
+                                }
+
+                                gp.Save();
+                            }
+
+                            if (rename || memberChanges)
+                            {
+                                DirectoryEntry de = ((DirectoryEntry)gp.GetUnderlyingObject());
+
+                                if (rename)
+                                {
+                                    de.Rename("CN=" + name);
+                                }
+
+                                List<string> currentMembers = GetMembers(group.DN);
+
+                                if (memberChanges)
+                                {
+                                    foreach (string member in group.ToAdd)
+                                    {
+                                        string dn = null;
+                                        if (userLocations.ContainsKey(member))
+                                        {
+                                            dn = userLocations[member];
+                                        }
+                                        else
+                                        {
+                                            continue;
+                                        }
+
+                                        if (!currentMembers.Contains(dn))
+                                        {
+                                            de.Properties["member"].Add(dn);
+                                        }
+                                        else
+                                        {
+                                            logger.LogWarning("Could not add " + member + " user was already in grup");
+                                        }
+                                    }
+
+                                    foreach (string member in group.ToRemove)
+                                    {
+                                        string dn = null;
+                                        if (userLocations.ContainsKey(member))
+                                        {
+                                            dn = userLocations[member];
+                                        }
+                                        else
+                                        {
+                                            logger.LogWarning("Could not find " + member + " for group removal");
+                                            continue;
+                                        }
+
+                                        if (currentMembers.Contains(dn))
+                                        {
+                                            de.Properties["member"].Remove(dn);
+                                        }
+                                        else
+                                        {
+                                            logger.LogWarning("Could not remove " + member + " did not find user in group");
+                                        }
+                                    }
+                                }
+
+                                de.CommitChanges();
+                            }
+                        }
+                        else
+                        {
+                            logger.LogError("Could not find group " + group.SamAccountName);
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Failed to update group " + name);
+                logger.LogWarning("Tried to add " + string.Join(";", group.ToAdd));
+                logger.LogWarning("Tried to remove " + string.Join(";", group.ToAdd));
+            }
+        }
+
+        public List<GroupDetails> GetAllGroups(Dictionary<string, string> usersDnToSamAccountName, bool useFastMethod)
+        {
+            List<GroupDetails> res = new List<GroupDetails>();
+
+            using (PrincipalContext context = new PrincipalContext(ContextType.Domain, null, settings.ActiveDirectorySettings.GroupSettings.GroupOUDN))
+            {
+                GroupPrincipal template = new GroupPrincipal(context);
+                using (PrincipalSearcher searcher = new PrincipalSearcher(template))
+                {
+                    ((DirectorySearcher)searcher.GetUnderlyingSearcher()).SearchScope = SearchScope.OneLevel;
+                    ((DirectorySearcher)searcher.GetUnderlyingSearcher()).PageSize = 500;
+
+                    using (var result = searcher.FindAll())
+                    {
+                        foreach (var group in result)
+                        {
+                            GroupPrincipal groupPrincipal = group as GroupPrincipal;
+                            if (groupPrincipal != null)
+                            {
+                                DirectoryEntry de = (DirectoryEntry)group.GetUnderlyingObject();
+
+                                if (de.Properties.Contains(settings.ActiveDirectorySettings.GroupSettings.GroupIdField))
+                                {
+                                    string id = (string)de.Properties[settings.ActiveDirectorySettings.GroupSettings.GroupIdField][0];
+                                    if (id.Split(":").Length == 2)
+                                    {
+                                        GroupDetails groupDetails = new GroupDetails();
+                                        groupDetails.Id = id;
+                                        groupDetails.Name = groupPrincipal.Name;
+                                        groupDetails.Description = groupPrincipal.Description;
+                                        groupDetails.SamAccountName = groupPrincipal.SamAccountName;
+                                        groupDetails.DisplayName = groupPrincipal.DisplayName;
+                                        groupDetails.DN = groupPrincipal.DistinguishedName;
+
+                                        if (!useFastMethod)
+                                        {
+                                            foreach (var member in groupPrincipal.GetMembers())
+                                            {
+                                                if (member is UserPrincipal)
+                                                {
+                                                    groupDetails.Members.Add(member.SamAccountName);
+                                                }
+                                            }
+                                        }
+                                        else
+                                        {
+                                            List<string> members = GetMembers(groupPrincipal.DistinguishedName);
+                                            foreach (string member in members)
+                                            {
+                                                if (usersDnToSamAccountName.ContainsKey(member))
+                                                {
+                                                    groupDetails.Members.Add(usersDnToSamAccountName[member]);
+                                                }
+                                            }
+                                        }
+
+                                        res.Add(groupDetails);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            return res;
+        }
+
+        public List<string> GetMembers(string groupDN)
+        {
+            List<string> members = new List<string>();
+
+            using (DirectoryEntry group = new DirectoryEntry("LDAP://" + groupDN))
+            {
+                group.RefreshCache(new[] { "member" });
+
+                var membersFound = 0;
+                while (true)
+                {
+                    var memberDns = group.Properties["member"];
+                    if (memberDns.Count == 0)
+                    {
+                        break;
+                    }
+
+                    foreach (string member in memberDns)
+                    {
+                        members.Add(member);
+                    }
+
+                    membersFound += memberDns.Count;
+
+                    try
+                    {
+                        group.RefreshCache(new[] { $"member;range={membersFound}-*" });
+                    }
+                    catch (COMException e)
+                    {
+                        // out of results
+                        if (e.ErrorCode == unchecked((int)0x80072020))
+                        {
+                            break;
+                        }
+
+                        // anything else is bad
+                        throw;
+                    }
+                }
+            }
+
+            return members;
+        }
+
+        public void CreateGroup(string name, string displayName, string description, string samAccountName, string id, IEnumerable<string> members, Dictionary<string, string> userLocations)
+        {
+            if (settings.ActiveDirectorySettings.GroupSettings.DryRun)
+            {
+                logger.LogInformation("DRYRUN: would have created group " + name);
+                return;
+            }
+
+            logger.LogInformation("Creating group " + name);
+
+            DirectoryEntry directoryEntry = new DirectoryEntry(@"LDAP://" + settings.ActiveDirectorySettings.GroupSettings.GroupOUDN);
+            if (directoryEntry == null)
+            {
+                logger.LogError("Could not find " + settings.ActiveDirectorySettings.GroupSettings.GroupOUDN);
+                return;
+            }
+
+            DirectoryEntry newGroup = directoryEntry.Children.Add("CN=" + name, "group");
+            newGroup.Properties["displayName"].Value = displayName;
+            newGroup.Properties["description"].Value = description;
+            newGroup.Properties["sAMAccountName"].Value = samAccountName;
+            // universal security group
+            newGroup.Properties["groupType"].Add(unchecked((int)-2147483640));
+            newGroup.Properties[settings.ActiveDirectorySettings.GroupSettings.GroupIdField].Value = id;
+
+            if (members != null && members.Count() > 0)
+            {
+                members = members.Distinct();
+
+                foreach (string member in members)
+                {
+                    string dn = null;
+                    if (userLocations.ContainsKey(member))
+                    {
+                        dn = userLocations[member];
+                    }
+                    else
+                    {
+                        continue;
+                    }
+
+                    newGroup.Properties["member"].Add(dn);
+                }
+            }
+
+            newGroup.CommitChanges();
+            newGroup.Close();
         }
 
         private List<DirectoryEntry> ListAllOrgUnitsFrom(DirectoryEntry entry)
@@ -227,7 +686,14 @@ namespace sofd_core_ad_replicator.Services.ActiveDirectory
             if (match == null)
             {
                 // create
-                match = CreateOU(createIn, name, currentNode, allOrgUnits);
+                if (testOURun)
+                {
+                    logger.LogWarning("SIMULATE: would have created " + name);
+                }
+                else
+                {
+                    match = CreateOU(createIn, name, currentNode, allOrgUnits);
+                }
             }
             else
             {
@@ -315,7 +781,7 @@ namespace sofd_core_ad_replicator.Services.ActiveDirectory
             return null;
         }
 
-        private string GetNameForOU(OrgUnit orgUnit)
+        public string GetNameForOU(OrgUnit orgUnit)
         {
             try
             {
@@ -340,10 +806,17 @@ namespace sofd_core_ad_replicator.Services.ActiveDirectory
             bool changes = false;
             if (!match.Name.Equals("OU=" + name))
             {
-                logger.LogInformation("Renaming " + match.Name + " to " + name);
+                if (testOURun)
+                {
+                    logger.LogWarning("SIMULATE: would have renamed " + match.Name + " to " + name);
+                }
+                else
+                {
+                    logger.LogInformation("Renaming " + match.Name + " to " + name);
 
-                match.Rename("OU=" + name);
-                changes = true;
+                    match.Rename("OU=" + name);
+                    changes = true;
+                }
             }
 
             if (!string.IsNullOrEmpty(eanField))
@@ -356,17 +829,31 @@ namespace sofd_core_ad_replicator.Services.ActiveDirectory
 
                 if (ean == 0 && match.Properties[eanField].Value != null)
                 {
-                    logger.LogInformation("Clearing EAN for " + name);
+                    if (testOURun)
+                    {
+                        logger.LogWarning("SIMULATE: would have cleared EAN for " + name);
+                    }
+                    else
+                    {
+                        logger.LogInformation("Clearing EAN for " + name);
 
-                    match.Properties[eanField].Clear();
-                    changes = true;
+                        match.Properties[eanField].Clear();
+                        changes = true;
+                    }
                 }
                 else if ( ean != 0 && !object.Equals(match.Properties[eanField].Value, ean.ToString()))
                 {
-                    logger.LogInformation("Setting EAN for " + name + " to " + currentNode.Ean.ToString());
+                    if (testOURun)
+                    {
+                        logger.LogWarning("SIMULATE: would have set EAN for " + name);
+                    }
+                    else
+                    {
+                        logger.LogInformation("Setting EAN for " + name + " to " + currentNode.Ean.ToString());
 
-                    match.Properties[eanField].Value = ean.ToString();
-                    changes = true;
+                        match.Properties[eanField].Value = ean.ToString();
+                        changes = true;
+                    }
                 }
             }
 
@@ -374,20 +861,34 @@ namespace sofd_core_ad_replicator.Services.ActiveDirectory
             {
                 if (currentNode.MasterId == null)
                 {
-                    if (match.Properties[losIdField].Value != null)
+                    if (testOURun)
                     {
-                        logger.LogInformation("Clearing LOS ID for " + name);
+                        logger.LogWarning("SIMULATE: would have cleared LOS for " + name);
+                    }
+                    else
+                    {
+                        if (match.Properties[losIdField].Value != null)
+                        {
+                            logger.LogInformation("Clearing LOS ID for " + name);
 
-                        match.Properties[losIdField].Clear();
-                        changes = true;
+                            match.Properties[losIdField].Clear();
+                            changes = true;
+                        }
                     }
                 }
                 else
                 {
-                    logger.LogInformation("Setting LOS ID for " + name + " to " + currentNode.MasterId);
+                    if (testOURun)
+                    {
+                        logger.LogWarning("SIMULATE: would have set LOS for " + name);
+                    }
+                    else
+                    {
+                        logger.LogInformation("Setting LOS ID for " + name + " to " + currentNode.MasterId);
 
-                    match.Properties[losIdField].Value = currentNode.MasterId;
-                    changes = true;
+                        match.Properties[losIdField].Value = currentNode.MasterId;
+                        changes = true;
+                    }
                 }
             }
 
@@ -396,24 +897,45 @@ namespace sofd_core_ad_replicator.Services.ActiveDirectory
             {
                 if (!string.IsNullOrEmpty(streetAddressField) && !object.Equals(match.Properties[streetAddressField].Value, primaryPost.Street))
                 {
-                    logger.LogInformation("Setting streetAddress for " + name + " to " + primaryPost.Street);
+                    if (testOURun)
+                    {
+                        logger.LogWarning("SIMULATE: would have set street for " + name);
+                    }
+                    else
+                    {
+                        logger.LogInformation("Setting streetAddress for " + name + " to " + primaryPost.Street);
 
-                    match.Properties[streetAddressField].Value = primaryPost.Street;
-                    changes = true;
+                        match.Properties[streetAddressField].Value = primaryPost.Street;
+                        changes = true;
+                    }
                 }
                 if (!string.IsNullOrEmpty(cityField) && !object.Equals(match.Properties[cityField].Value, primaryPost.City))
                 {
-                    logger.LogInformation("Setting city for " + name + " to " + primaryPost.City);
+                    if (testOURun)
+                    {
+                        logger.LogWarning("SIMULATE: would have set city for " + name);
+                    }
+                    else
+                    {
+                        logger.LogInformation("Setting city for " + name + " to " + primaryPost.City);
 
-                    match.Properties[cityField].Value = primaryPost.City;
-                    changes = true;
+                        match.Properties[cityField].Value = primaryPost.City;
+                        changes = true;
+                    }
                 }
                 if (!string.IsNullOrEmpty(postalCodeField) && !object.Equals(match.Properties[postalCodeField].Value, primaryPost.PostalCode))
                 {
-                    logger.LogInformation("Setting postalCode for " + name + " to " + primaryPost.PostalCode);
+                    if (testOURun)
+                    {
+                        logger.LogWarning("SIMULATE: would have set postalCode for " + name);
+                    }
+                    else
+                    {
+                        logger.LogInformation("Setting postalCode for " + name + " to " + primaryPost.PostalCode);
 
-                    match.Properties[postalCodeField].Value = primaryPost.PostalCode;
-                    changes = true;
+                        match.Properties[postalCodeField].Value = primaryPost.PostalCode;
+                        changes = true;
+                    }
                 }
             }
             else
@@ -422,85 +944,120 @@ namespace sofd_core_ad_replicator.Services.ActiveDirectory
                 {
                     if (match.Properties[streetAddressField].Value != null)
                     {
-                        logger.LogInformation("Clearing streetAddress for " + name);
-                        match.Properties[streetAddressField].Clear();
-                        changes = true;
+                        if (testOURun)
+                        {
+                            logger.LogWarning("SIMULATE: would have cleared street for " + name);
+                        }
+                        else
+                        {
+                            logger.LogInformation("Clearing streetAddress for " + name);
+                            match.Properties[streetAddressField].Clear();
+                            changes = true;
+                        }
                     }
                 }
                 if (!string.IsNullOrEmpty(cityField))
                 {
                     if (match.Properties[cityField].Value != null)
                     {
-                        logger.LogInformation("Clearing city for " + name);
-                        match.Properties[cityField].Clear();
-                        changes = true;
+                        if (testOURun)
+                        {
+                            logger.LogWarning("SIMULATE: would have cleared city for " + name);
+                        }
+                        else
+                        {
+                            logger.LogInformation("Clearing city for " + name);
+                            match.Properties[cityField].Clear();
+                            changes = true;
+                        }
                     }
                 }
                 if (!string.IsNullOrEmpty(postalCodeField))
                 {
-                    if (match.Properties[postalCodeField].Value != null)
+                    if (testOURun)
                     {
-                        logger.LogInformation("Clearing postalCode for " + name);
-                        match.Properties[postalCodeField].Clear();
-                        changes = true;
+                        logger.LogWarning("SIMULATE: would have cleared postalCode for " + name);
+                    }
+                    else
+                    {
+                        if (match.Properties[postalCodeField].Value != null)
+                        {
+                            logger.LogInformation("Clearing postalCode for " + name);
+                            match.Properties[postalCodeField].Clear();
+                            changes = true;
+                        }
                     }
                 }
             }
 
             if (changes)
             {
-                match.CommitChanges();
+                if (testOURun)
+                {
+                    logger.LogWarning("SIMULATE: would have committed changes on " + name);
+                }
+                else
+                {
+                    match.CommitChanges();
+                }
             }
 
             // check if moved
             if (!match.Parent.Properties["distinguishedName"].Value.Equals(shouldBeIn.Properties["distinguishedName"].Value))
             {
-                logger.LogInformation($"Moving OU {match.Properties["distinguishedName"].Value} to {shouldBeIn.Properties["distinguishedName"].Value}");
-                var DNBeforeMove = match.Properties["distinguishedName"].Value;
-                // try to remove the "protect against accidental deletion" flag
-                try
+                if (testOURun)
                 {
-                    System.Security.Principal.IdentityReference newOwner = new System.Security.Principal.NTAccount("Everyone").Translate(typeof(System.Security.Principal.SecurityIdentifier));
-                    ActiveDirectoryAccessRule rule = new ActiveDirectoryAccessRule(newOwner, ActiveDirectoryRights.Delete | ActiveDirectoryRights.DeleteChild | ActiveDirectoryRights.DeleteTree, System.Security.AccessControl.AccessControlType.Deny);
-                    match.ObjectSecurity.RemoveAccessRule(rule);
-
-                    match.CommitChanges();
+                    logger.LogInformation($"SIMULATE: Moving OU {match.Properties["distinguishedName"].Value} to {shouldBeIn.Properties["distinguishedName"].Value}");
                 }
-                catch (Exception ex)
+                else
                 {
-                    logger.LogWarning(ex, "Tried to remove 'protect against accidental deletion' on OU, but it failed");
-                }
-
-                match.MoveTo(shouldBeIn);
-                var DNAfterMove = match.Properties["distinguishedName"].Value;
-
-                if (settings.ActiveDirectorySettings.OURunScriptOnMove != null && settings.ActiveDirectorySettings.OURunScriptOnMove.Length > 0)
-                {
-                    using (PrincipalContext ctx = GetPrincipalContext())
+                    logger.LogInformation($"Moving OU {match.Properties["distinguishedName"].Value} to {shouldBeIn.Properties["distinguishedName"].Value}");
+                    var DNBeforeMove = match.Properties["distinguishedName"].Value;
+                    // try to remove the "protect against accidental deletion" flag
+                    try
                     {
-                        String script = null;
-                        string domainController = ctx.ConnectedServer;
-                        using (PowerShell ps = PowerShell.Create())
+                        System.Security.Principal.IdentityReference newOwner = new System.Security.Principal.NTAccount("Everyone").Translate(typeof(System.Security.Principal.SecurityIdentifier));
+                        ActiveDirectoryAccessRule rule = new ActiveDirectoryAccessRule(newOwner, ActiveDirectoryRights.Delete | ActiveDirectoryRights.DeleteChild | ActiveDirectoryRights.DeleteTree, System.Security.AccessControl.AccessControlType.Deny);
+                        match.ObjectSecurity.RemoveAccessRule(rule);
+
+                        match.CommitChanges();
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.LogWarning(ex, "Tried to remove 'protect against accidental deletion' on OU, but it failed");
+                    }
+
+                    match.MoveTo(shouldBeIn);
+                    var DNAfterMove = match.Properties["distinguishedName"].Value;
+
+                    if (settings.ActiveDirectorySettings.OURunScriptOnMove != null && settings.ActiveDirectorySettings.OURunScriptOnMove.Length > 0)
+                    {
+                        using (PrincipalContext ctx = GetPrincipalContext())
                         {
-                            ps.AddScript(File.ReadAllText(@"" + settings.ActiveDirectorySettings.OURunScriptOnMove));
-                            script = script + "\n\n" +
+                            String script = null;
+                            string domainController = ctx.ConnectedServer;
+                            using (PowerShell ps = PowerShell.Create())
+                            {
+                                ps.AddScript(File.ReadAllText(@"" + settings.ActiveDirectorySettings.OURunScriptOnMove));
+                                script = script + "\n\n" +
 
-                                   "$ppArg1=\"" + domainController + "\"\n" +
+                                       "$ppArg1=\"" + domainController + "\"\n" +
 
-                                   "$ppArg2=\"" + DNBeforeMove + "\"\n" +
+                                       "$ppArg2=\"" + DNBeforeMove + "\"\n" +
 
-                                   "$ppArg3=\"" + DNAfterMove + "\"\n";
+                                       "$ppArg3=\"" + DNAfterMove + "\"\n";
 
-                            script += "\nInvoke-Method -DomainController $ppArg1 -DistinguishedNameFrom $ppArg2 -DistinguishedNameTo $ppArg3";
-                            script += "\n";
+                                script += "\nInvoke-Method -DomainController $ppArg1 -DistinguishedNameFrom $ppArg2 -DistinguishedNameTo $ppArg3";
+                                script += "\n";
 
-                            ps.AddScript(script);
-                            logger.LogInformation($"Invoking powershell script {settings.ActiveDirectorySettings.OURunScriptOnMove}: {script}");
-                            ps.Invoke();
+                                ps.AddScript(script);
+                                // logger.LogInformation($"Invoking powershell script {settings.ActiveDirectorySettings.OURunScriptOnMove}: {script}");
+                                logger.LogInformation($"Invoking powershell script {settings.ActiveDirectorySettings.OURunScriptOnMove}");
+                                ps.Invoke();
+                            }
                         }
                     }
                 }
-
             }
         }
 
@@ -580,7 +1137,8 @@ namespace sofd_core_ad_replicator.Services.ActiveDirectory
                         script += "\n";
 
                         ps.AddScript(script);
-                        logger.LogInformation($"Invoking powershell script {settings.ActiveDirectorySettings.OURunScriptOnCreate}: {script}");
+                        // logger.LogInformation($"Invoking powershell script {settings.ActiveDirectorySettings.OURunScriptOnCreate}: {script}");
+                        logger.LogInformation($"Invoking powershell script {settings.ActiveDirectorySettings.OURunScriptOnCreate}");
                         ps.Invoke();
                     }
                 }
@@ -696,17 +1254,16 @@ namespace sofd_core_ad_replicator.Services.ActiveDirectory
 
 
                         ps.AddScript(script);
-                        logger.LogInformation($"Invoking powershell script {settings.ActiveDirectorySettings.OURunScriptOnDelete}: {script}");
+                        //logger.LogInformation($"Invoking powershell script {settings.ActiveDirectorySettings.OURunScriptOnDelete}: {script}");
+                        logger.LogInformation($"Invoking powershell script {settings.ActiveDirectorySettings.OURunScriptOnDelete}");
                         ps.Invoke();
                     }
                 }
             }
-
-
         }
 
         private void MoveUser(string userId, string from, string to)
-        {            
+        {
             if (dryRunMoveUsers)
             {
                 logger.LogInformation("DRYRUN moving user " + userId + " from " + from + " to " + to);
@@ -747,7 +1304,8 @@ namespace sofd_core_ad_replicator.Services.ActiveDirectory
                             script += "\n";
 
                             ps.AddScript(script);
-                            logger.LogInformation($"Invoking powershell script {settings.ActiveDirectorySettings.UserRunScriptOnMove}: {script}");
+                            // logger.LogInformation($"Invoking powershell script {settings.ActiveDirectorySettings.UserRunScriptOnMove}: {script}");
+                            logger.LogInformation($"Invoking powershell script {settings.ActiveDirectorySettings.UserRunScriptOnMove}");
                             ps.Invoke();
                         }
                     }

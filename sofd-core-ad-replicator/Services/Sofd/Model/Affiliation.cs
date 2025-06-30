@@ -11,5 +11,6 @@ namespace sofd_core_ad_replicator.Services.Sofd.Model
         public String OrgUnitUuid { get; set; }
         public String AlternativeOrgunitUuid { get; set; }
         public Boolean Prime { get; set; }
+        public string AffiliationType { get; set; }
     }
 }

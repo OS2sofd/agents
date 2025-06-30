@@ -1,5 +1,5 @@
 #define AppId "{{9db43678-cb1e-494f-9845-f6db18f54758}"
-#define AppSourceDir "..\bin\Debug\net6.0\publish\win-x86"
+#define AppSourceDir "..\bin\publish"
 #define AppName "SofdCoreADReplicator"
 #define AppPublisher "Digital Identity"
 #define AppURL "http://digital-identity.dk/"
