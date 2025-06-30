@@ -89,3 +89,11 @@
 01.08.2024 - version 2.30.0 - Added support for CyberArk (Privileged access management)
 23.08.2024 - version 2.31.0 - Added support for inheritedEan field
 15.10.2024 - version 2.32.0 - Added vendor to affiliation model
+04.12.2024 - version 2.33.0 - Added calculatedFirstname and calculatedSurname fields
+15.01.2025 - version 2.34.0 - Added list mappings
+06.03.2025 - version 2.35.0 - Can now move users to OU
+19.03.2025 - version 2.35.1 - No longer move disabled users
+03.04.2025 - version 2.36.0 - Dryrun setting til attributter
+09.05.2025 - version 2.36.1 - Added ActiveDirectoryWritebackIncludeOUs setting
+02.05.2025 - version 2.37.0 - Support for searchWords in mappings
+12.06.2025 - version 2.38.0 - Added phoneformat method

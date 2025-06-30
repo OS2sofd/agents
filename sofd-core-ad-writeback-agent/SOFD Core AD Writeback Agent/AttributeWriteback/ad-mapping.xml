@@ -1,50 +1,5 @@
-﻿<?xml version="1.0" encoding="utf-8" ?>
+<?xml version="1.0" encoding="utf-8" ?>
 <mappings>
-	<!--simple eksempler. Hvis ingen punktum er angivet tager den bare attributterne fra Person objektet i SOFD-->
-	<!--<mapping sofd="firstname" ad="givenName" />-->
-	<!--<mapping sofd="surname" ad="sn" />-->
-
-	<!--Eksempler fra affiliaton-->
-	<!--<mapping sofd="affiliation.positionName" ad="description" />-->
-	<!--<mapping sofd="affiliation.orgUnit.name" ad="description" />-->
-
-	<!--Eksempel på mapping hvor man vil have navnet på forældreenheden -->
-	<!--<mapping sofd="affiliation.orgUnit.parent.name" ad="description" />-->
-
-	<!--Eksempel på mapping hvor man vil have navnet på enheden i 4. niveau fra toppen med nedarvning -->
-	<!--<mapping sofd="affiliation.orgUnit.^4.name" ad="title" />-->
-
-	<!--Eksempel på mapping hvor man vil have navnet på enheden i 4. niveau fra toppen uden nedarvning -->
-	<!--<mapping sofd="affiliation.orgUnit.>4.name" ad="description" />-->	
-	
-	<!--Eksempel på concat mapping hvor man vil lægge 2 værdier sammen og skrive til én attribut i AD-->
-	<!--Denne vil skrive "fornavn (efternavn)" i AD-->
-	<!--<mapping sofd="concat(firstname,surname)" ad="extentionAttribute2" />-->
-
-	<!--Eksempel på join mapping hvor man vil lægge flere værdier sammen og skrive til én attribut i AD-->
-	<!--Denne vil skrive "fornavn efternavn" i AD-->
-	<!--<mapping sofd="join(firstname,static( ),surname)" ad="extentionAttribute2" />-->
-
-	<!--Eksempel på mapping hvor man vil have et tag fra enheden.-->
-	<!--Der angives 3 parametre til tag:-->
-	<!--Første parameter angiver navnet på Tag (Office i eksemplet)-->
-	<!--Anden parameter angiver om der skal anvendes nedarvning fra øvre enheder i hierarkiet (true eller false) -->
-	<!--Tredje parameter angivet hvilken attribut på orgUnit der skal anvendes som defaultværdi, hvis tagget ikke selv har en værdi. Der kan angives null-->
-	<!--<mapping sofd="affiliation.orgUnit.tag[Office,true,name]" ad="physicalDeliveryOfficeName" />-->
-
-	<!--Eksempel på isnull, hvor den første værdi returneres hvis den ikke er null, ellers returneres den anden værdi-->
-	<!--<mapping sofd="isnull(affiliation.orgUnit.tag[Centerniveau,true,name],affiliation.orgUnit.name)" ad="company" />-->
-	<!--<mapping sofd="isnull(affiliation.orgUnit.^2.tag[Centerniveau,true,name],affiliation.orgUnit.^2.name)" ad="description" />-->
-
-	<!-- Eksempel på brugen af NOCLEAR mapningen til AD. Hvis den er angivet, så tømmer vi ikke feltet i AD hvis det forsvinder i SOFD -->
-	<!--<mapping sofd="firstname" ad="NOCLEAR(givenName)" />-->
-
-	<!-- Eksempel på brugen af NOREPLACE mapningen til AD. Hvis den er angivet, Så udfylder vi kun feltet i AD hvis det er tomt -->
-	<!--<mapping sofd="firstname" ad="NOREPLACE(givenName)" />-->
-
-	<!-- Eksempel på formattering af cpr med bindestreg-->
-	<!--<mapping sofd="cprformat(cpr)" ad="description" />-->
-	
-	<!-- tag navnet på enheden 1 niveau over der hvor medarbejderen er ansat -->
-	<!--<mapping sofd="affiliation.orgUnit._1.name" ad="description" />-->
+	<!-- Se filen ad-mapping-eksempler.xml for diverse eksmepler -->
+	<!-- Se filen Felter.txt i roden af installationen for mulige felter -->
 </mappings>

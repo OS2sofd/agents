@@ -19,6 +19,7 @@ namespace SOFD
         private static ILogger log = new LoggerConfiguration().ReadFrom.AppSettings().CreateLogger().ForContext(typeof(WritebackJob));
         private static string updateUserType = Properties.Settings.Default.ActiveDirectoryUserType;
         private static string activeDirectoryWritebackExcludeOUs = Properties.Settings.Default.ActiveDirectoryWritebackExcludeOUs;
+        private static string activeDirectoryWritebackIncludeOUs = Properties.Settings.Default.ActiveDirectoryWritebackIncludeOUs;
 
         private SOFDOrganizationService organizationService;
 
@@ -212,12 +213,20 @@ namespace SOFD
                 activeDirectoryWritebackExcludeOUsList.AddRange(activeDirectoryWritebackExcludeOUs.Split(';'));
             }
 
+            var activeDirectoryWritebackIncludeOUsList = new List<string>();
+            if (!string.IsNullOrEmpty(activeDirectoryWritebackIncludeOUs))
+            {
+                activeDirectoryWritebackIncludeOUsList.AddRange(activeDirectoryWritebackIncludeOUs.Split(';').Except(activeDirectoryWritebackExcludeOUsList).ToList());
+            }
+
             ActiveDirectoryAttributeService activeDirectoryService = new ActiveDirectoryAttributeService(new ActiveDirectoryConfig()
             {
                 map = adMappingList,
                 ActiveDirectoryWritebackExcludeOUs = activeDirectoryWritebackExcludeOUsList,
+                ActiveDirectoryWritebackIncludeOUs = activeDirectoryWritebackIncludeOUsList,
                 EnablePowershell = Properties.Settings.Default.ActiveDirectoryEnablePowershell,
-                EnableFallbackToPrimeAffiliation = Properties.Settings.Default.EnableFallbackToPrimeAffiliation
+                EnableFallbackToPrimeAffiliation = Properties.Settings.Default.EnableFallbackToPrimeAffiliation,
+                DryRun = Properties.Settings.Default.DryRunAttributes
             }, adLogger);
 
             bool orgUnitRequired = OrgUnitRequired(adMappingList.Values);
@@ -232,42 +241,17 @@ namespace SOFD
 
                 foreach (var person in persons)
                 {
-                    List<string> relevantOrgUnitUuids = new List<string>();
-                    bool foundADAccount = false;
-
-                    foreach (User user in person.users)
-                    {
-                        if (user.userType.Equals(updateUserType))
-                        {
-                            foundADAccount = true;
-
-                            // check for relevancy in affiliations
-                            if (!string.IsNullOrEmpty(user.employeeId) && person.affiliations != null && person.affiliations.Count > 0)
-                            {
-                                foreach (Affiliation a in person.affiliations)
-                                {
-                                    if (string.Equals(user.employeeId, a.employeeId))
-                                    {
-                                        relevantOrgUnitUuids.Add(a.calculatedOrgUnitUuid.ToString());
-                                        break;
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    if (!foundADAccount)
+                    if (!person.users.Any(u => u.userType == updateUserType))
                     {
                         continue;
                     }
 
-                    List<OrgUnit> relevantOrgUnits = new List<OrgUnit>();
-                    if (orgUnitRequired && person.affiliations != null && person.affiliations.Count > 0)
+                    Dictionary<string,OrgUnit> relevantOrgUnits = new Dictionary<string, OrgUnit>();
+                    if (orgUnitRequired && person.affiliations != null)
                     {
-                        foreach (Affiliation a in person.affiliations)
+                        foreach (Affiliation a in person.affiliations.Where(a => a.isActiveOrFutureActive()))
                         {
-                            // we care about relevant affiliations and prime affilations
-                            if (!a.prime && !relevantOrgUnitUuids.Contains(a.calculatedOrgUnitUuid.ToString()))
+                            if (relevantOrgUnits.ContainsKey(a.calculatedOrgUnitUuid))
                             {
                                 continue;
                             }
@@ -279,7 +263,7 @@ namespace SOFD
                                 continue;
                             }
 
-                            relevantOrgUnits.Add(orgUnit);
+                            relevantOrgUnits.Add(orgUnit.uuid, orgUnit);
 
                             // check if we need ou with parent
                             if (orgUnitParentRequired)
@@ -301,7 +285,7 @@ namespace SOFD
 
                     try
                     {
-                        activeDirectoryService.UpdatePerson(person, relevantOrgUnits, updateUserType, updateManagersEnabled, managerNoClear);
+                        activeDirectoryService.UpdatePerson(person, relevantOrgUnits.Values.ToList(), updateUserType, updateManagersEnabled, managerNoClear);
                     }
                     catch (Exception ex)
                     {
@@ -338,7 +322,7 @@ namespace SOFD
             // otherwise orgunits are only required if they are part of the mapping xml
             foreach (string key in values)
             {
-                if (key.Contains("orgUnit"))
+                if (key.ToLower().Contains("orgunit"))
                 {
                     return true;
                 }

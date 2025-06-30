@@ -12,6 +12,7 @@ namespace SOFD_Core.Model
         public string userType { get; set; }
         public string employeeId { get; set; }
         public bool prime { get; set; }
+        public bool disabled { get; set; }
         public string kombitUuid { get; set; }
 
         // internal fields only

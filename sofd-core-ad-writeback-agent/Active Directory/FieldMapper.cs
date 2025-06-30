@@ -1,38 +1,34 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Management.Automation;
 using System.Text.RegularExpressions;
-using Serilog.Core;
-using Serilog.Events;
-using SOFD_Core;
 using SOFD_Core.Model;
 
 namespace Active_Directory
 {
     class FieldMapper
     {
-        public static string GetValue(string userId, string sofdField, Person person, Affiliation affiliation, OrgUnit orgUnit)
+        public static string GetValue(string userId, string sofdField, Person person, List<OrgUnit> orgUnits, Affiliation affiliation, OrgUnit orgUnit)
         {
             if (sofdField.StartsWith("concat("))
             {
-                return GetValueConcat(userId, sofdField, person, affiliation, orgUnit);
+                return GetValueConcat(userId, sofdField, person, orgUnits, affiliation, orgUnit);
             }
             if (sofdField.StartsWith("join("))
             {
-                return GetValueJoin(userId, sofdField, person, affiliation, orgUnit);
+                return GetValueJoin(userId, sofdField, person, orgUnits, affiliation, orgUnit);
             }
             if (sofdField.StartsWith("prefix("))
             {
-                return GetValuePrefix(userId, sofdField, person, affiliation, orgUnit);
+                return GetValuePrefix(userId, sofdField, person, orgUnits, affiliation, orgUnit);
             }
             if (sofdField.StartsWith("right("))
             {
-                return GetValueRight(userId, sofdField, person, affiliation, orgUnit);
+                return GetValueRight(userId, sofdField, person, orgUnits, affiliation, orgUnit);
             }
             if (sofdField.StartsWith("left("))
             {
-                return GetValueLeft(userId, sofdField, person, affiliation, orgUnit);
+                return GetValueLeft(userId, sofdField, person, orgUnits, affiliation, orgUnit);
             }
             if (sofdField.StartsWith("static("))
             {
@@ -40,24 +36,33 @@ namespace Active_Directory
             }
             if (sofdField.StartsWith("isnull("))
             {
-                return GetValueIsNull(userId, sofdField, person, affiliation, orgUnit);
+                return GetValueIsNull(userId, sofdField, person, orgUnits, affiliation, orgUnit);
             }
             if (sofdField.StartsWith("pad("))
             {
-                return GetValuePad(userId, sofdField, person, affiliation, orgUnit);
+                return GetValuePad(userId, sofdField, person, orgUnits, affiliation, orgUnit);
             }
             if (sofdField.StartsWith("cprformat("))
             {
-                return GetValueCprFormat(userId, sofdField, person, affiliation, orgUnit);
+                return GetValueCprFormat(userId, sofdField, person, orgUnits, affiliation, orgUnit);
             }
             if (sofdField.StartsWith("replace("))
             {
-                return GetValueReplace(userId, sofdField, person, affiliation, orgUnit);
+                return GetValueReplace(userId, sofdField, person, orgUnits, affiliation, orgUnit);
             }
             if (sofdField.StartsWith("trim("))
             {
-                return GetValueTrim(userId, sofdField, person, affiliation, orgUnit);
+                return GetValueTrim(userId, sofdField, person, orgUnits, affiliation, orgUnit);
             }
+            if (sofdField.StartsWith("list("))
+            {
+                return GetValueList(userId, sofdField, person, orgUnits, affiliation, orgUnit);
+            }
+            if (sofdField.StartsWith("phoneformat("))
+            {
+                return GetValuePhoneFormat(userId, sofdField, person, orgUnits, affiliation, orgUnit);
+            }
+
 
             string[] tokens = sofdField.Split('.');
             if (tokens.Length < 1)
@@ -83,6 +88,10 @@ namespace Active_Directory
                     return MapUser(userId, sofdField, person);
                 case "authorizationCode":
                     return MapAuthorizationCode(sofdField, person);
+                case "primaryMobile":
+                    return MapMobile(person);
+                case "primaryLandline":
+                    return MapLandline(person);
                 default:
                     return person.GetType().GetProperty(tokens[0])?.GetValue(person)?.ToString();
             }
@@ -103,7 +112,7 @@ namespace Active_Directory
             return null;
         }
 
-        private static string GetValueConcat(string userId, string sofdField, Person person, Affiliation affiliation, OrgUnit orgUnit)
+        private static string GetValueConcat(string userId, string sofdField, Person person, List<OrgUnit> orgUnits, Affiliation affiliation, OrgUnit orgUnit)
         {
             // concat(xxx,xxxx) - strip first 7 chars and last, then trim
             var newSofdField = sofdField.Substring(7, sofdField.Length - 8).Trim();
@@ -113,13 +122,13 @@ namespace Active_Directory
             {
                 throw new Exception("concat takes 2 arguments: " + sofdField);
             }
-            var field1 = GetValue(userId, fields[0], person, affiliation, orgUnit);
-            var field2 = GetValue(userId, fields[1], person, affiliation, orgUnit);
+            var field1 = GetValue(userId, fields[0], person, orgUnits, affiliation, orgUnit);
+            var field2 = GetValue(userId, fields[1], person, orgUnits, affiliation, orgUnit);
 
             return field1 + " (" + field2 + ")";
         }
 
-        private static string GetValuePad(string userId, string sofdField, Person person, Affiliation affiliation, OrgUnit orgUnit)
+        private static string GetValuePad(string userId, string sofdField, Person person, List<OrgUnit> orgUnits, Affiliation affiliation, OrgUnit orgUnit)
         {
             // pad(x,xxx,xxxx) - strip first 4 chars and last, then trim
             var newSofdField = sofdField.Substring(4, sofdField.Length - 5).Trim();
@@ -130,7 +139,7 @@ namespace Active_Directory
                 throw new Exception("pad takes 3 arguments: " + sofdField);
             }
 
-            var field = GetValue(userId, fields[2], person, affiliation, orgUnit);
+            var field = GetValue(userId, fields[2], person, orgUnits, affiliation, orgUnit);
             var maxLength = int.Parse(fields[0]);
             var padChar = char.Parse(fields[1]);
 
@@ -148,7 +157,7 @@ namespace Active_Directory
             return finalString;
         }
 
-        private static string GetValueJoin(string userId, string sofdField, Person person, Affiliation affiliation, OrgUnit orgUnit)
+        private static string GetValueJoin(string userId, string sofdField, Person person, List<OrgUnit> orgUnits, Affiliation affiliation, OrgUnit orgUnit)
         {
             // join(xxx,xxxx) - strip first 5 chars and last, then trim
             var newSofdField = sofdField.Substring(5, sofdField.Length - 6).Trim();
@@ -164,7 +173,7 @@ namespace Active_Directory
             var result = "";
             foreach (var field in fields)
             {
-                var fieldValue = GetValue(userId, field, person, affiliation, orgUnit);
+                var fieldValue = GetValue(userId, field, person, orgUnits, affiliation, orgUnit);
                 // if any of the fields in the join are null, the entire join expression evaluates to null
                 if (fieldValue == null)
                 {
@@ -176,7 +185,79 @@ namespace Active_Directory
             return result;
         }
 
-        private static string GetValueReplace(string userId, string sofdField, Person person, Affiliation affiliation, OrgUnit orgUnit)
+        private static string GetValueList(string userId, string sofdField, Person person, List<OrgUnit> orgUnits, Affiliation affiliation, OrgUnit orgUnit)
+        {
+            // list(xxx,xxxx,xxxx) - strip first 5 chars and last
+            var newSofdField = sofdField.Substring(5, sofdField.Length - 6);
+
+            // split by commas except commas that are inside parentheses (e.g. other methods)
+            string[] fields = new Regex(",").Split(newSofdField, 3);
+
+            if (fields.Length < 3)
+            {
+                throw new Exception("list takes at least 3 arguments: " + sofdField);
+            }
+
+            var listField = fields[0].ToLower();
+            var expression = fields[1];
+            var separator = fields[2];
+
+            var resultValues = new List<string>();
+
+            if (listField == "affiliations")
+            {
+                foreach (var aff in person.affiliations.Where(a => a.isActiveOrFutureActive()).OrderByDescending(a => a.prime))
+                {
+                    var value = GetValue(userId, $"affiliation.{expression}", person, orgUnits, aff, orgUnits.Where(o => o.uuid == aff.calculatedOrgUnitUuid).Single());
+                    if (value != null)
+                    {
+                        resultValues.Add(value);
+                    }
+                    
+                }
+            }
+            else if (listField == "users")
+            {
+                foreach (var user in person.users.OrderByDescending(u => u.prime))
+                {
+                    var value = GetValue(user.userId, $"user.{expression}", person, orgUnits, affiliation, orgUnit);
+                    if (value != null)
+                    {
+                        resultValues.Add(value);
+                    }
+                }
+            }
+            else if (listField == "phones")
+            {
+
+                string[] tokens = expression.Split('.');
+                if (tokens.Length < 2)
+                {
+                    throw new Exception("Invalid sofd field: " + sofdField);
+                }
+                var phoneType = tokens[0];
+                var phoneProperty = tokens[1];
+
+                if (person.phones != null)
+                {
+                    foreach (var phone in person.phones.Where(p => p.phoneType.ToLower() == phoneType.ToLower()).OrderByDescending(p => p.typePrime))
+                    {
+                        var value = phone.GetType().GetProperty(phoneProperty)?.GetValue(phone)?.ToString();
+                        if (value != null)
+                        {
+                            resultValues.Add(value);
+                        }
+                    }
+                }
+            }
+            else {
+                throw new Exception($"Invalid list field: {listField}");
+            }
+
+            return String.Join(separator, resultValues.Distinct());
+        }
+
+        private static string GetValueReplace(string userId, string sofdField, Person person, List<OrgUnit> orgUnits, Affiliation affiliation, OrgUnit orgUnit)
         {
             // replace(xxx,xxxx) - strip first 8 chars and last, then trim
             var newSofdField = sofdField.Substring(8, sofdField.Length - 9).Trim();
@@ -188,7 +269,7 @@ namespace Active_Directory
             {
                 throw new Exception("replace takes 3 arguments: " + sofdField);
             }
-            var fieldValue = GetValue(userId, fields[0], person, affiliation, orgUnit);
+            var fieldValue = GetValue(userId, fields[0], person, orgUnits, affiliation, orgUnit);
             if (fieldValue == null) {
                 return null;
             }
@@ -198,15 +279,15 @@ namespace Active_Directory
             return result;
         }
 
-        private static string GetValueTrim(string userId, string sofdField, Person person, Affiliation affiliation, OrgUnit orgUnit)
+        private static string GetValueTrim(string userId, string sofdField, Person person, List<OrgUnit> orgUnits, Affiliation affiliation, OrgUnit orgUnit)
         {
             // trim(xxx,xxxx) - strip first 5 chars and last, then trim
             var newSofdField = sofdField.Substring(5, sofdField.Length - 6).Trim();
-            var fieldValue = GetValue(userId, newSofdField, person, affiliation, orgUnit);
+            var fieldValue = GetValue(userId, newSofdField, person, orgUnits, affiliation, orgUnit);
             return fieldValue != null ? fieldValue.Trim() : null;
         }
 
-        private static string GetValueIsNull(string userId, string sofdField, Person person, Affiliation affiliation, OrgUnit orgUnit)
+        private static string GetValueIsNull(string userId, string sofdField, Person person, List<OrgUnit> orgUnits, Affiliation affiliation, OrgUnit orgUnit)
         {
             // isnull(xxx,xxxx) - strip first 7 chars and last, then trim
             var newSofdField = sofdField.Substring(7, sofdField.Length - 8).Trim();
@@ -217,20 +298,19 @@ namespace Active_Directory
             {
                 throw new Exception("isnull takes 2 arguments: " + sofdField);
             }
-            var field1 = GetValue(userId, fields[0], person, affiliation, orgUnit);
+            var field1 = GetValue(userId, fields[0], person, orgUnits, affiliation, orgUnit);
             if (field1 != null)
             {
                 return field1;
             }
             else
             {
-                var field2 = GetValue(userId, fields[1], person, affiliation, orgUnit);
+                var field2 = GetValue(userId, fields[1], person, orgUnits, affiliation, orgUnit);
                 return field2;
             }
         }
 
-
-        private static string GetValuePrefix(string userId, string sofdField, Person person, Affiliation affiliation, OrgUnit orgUnit)
+        private static string GetValuePrefix(string userId, string sofdField, Person person, List<OrgUnit> orgUnits, Affiliation affiliation, OrgUnit orgUnit)
         {
             // prefix(xxx,xxxx) - strip first 7 chars and last, then trim
             var newSofdField = sofdField.Substring(7, sofdField.Length - 8).Trim();
@@ -242,7 +322,7 @@ namespace Active_Directory
             }
 
             var prefix = fields[0];
-            var field = GetValue(userId, fields[1], person, affiliation, orgUnit);
+            var field = GetValue(userId, fields[1], person, orgUnits, affiliation, orgUnit);
 
             if (field == null)
             {
@@ -252,7 +332,7 @@ namespace Active_Directory
         }
 
 
-        private static string GetValueRight(string userId, string sofdField, Person person, Affiliation affiliation, OrgUnit orgUnit)
+        private static string GetValueRight(string userId, string sofdField, Person person, List<OrgUnit> orgUnits, Affiliation affiliation, OrgUnit orgUnit)
         {
             // right(xxx,4) - return only the rightmost 4 characters of the value
             var newSofdField = sofdField.Substring(6, sofdField.Length - 7).Trim();
@@ -262,7 +342,7 @@ namespace Active_Directory
                 throw new Exception("right takes 2 arguments: " + sofdField);
             }
             var length = int.Parse(args[1]);
-            var field = GetValue(userId, args[0], person, affiliation, orgUnit);
+            var field = GetValue(userId, args[0], person, orgUnits, affiliation, orgUnit);
 
             if (field != null && field.Length > length)
             {
@@ -271,7 +351,7 @@ namespace Active_Directory
             return field;
         }
 
-        private static string GetValueLeft(string userId, string sofdField, Person person, Affiliation affiliation, OrgUnit orgUnit)
+        private static string GetValueLeft(string userId, string sofdField, Person person, List<OrgUnit> orgUnits, Affiliation affiliation, OrgUnit orgUnit)
         {
             // left(xxx,4) - return only the leftmost 4 characters of the value
             var newSofdField = sofdField.Substring(5, sofdField.Length - 6).Trim();
@@ -281,7 +361,7 @@ namespace Active_Directory
                 throw new Exception("left takes 2 arguments: " + sofdField);
             }
             var length = int.Parse(args[1]);
-            var field = GetValue(userId, args[0], person, affiliation, orgUnit);
+            var field = GetValue(userId, args[0], person, orgUnits, affiliation, orgUnit);
 
             if (field != null && field.Length > length)
             {
@@ -290,16 +370,27 @@ namespace Active_Directory
             return field;
         }
 
-        private static string GetValueCprFormat(string userId, string sofdField, Person person, Affiliation affiliation, OrgUnit orgUnit)
+        private static string GetValueCprFormat(string userId, string sofdField, Person person, List<OrgUnit> orgUnits, Affiliation affiliation, OrgUnit orgUnit)
         {
-            // cprformat(xxx,xxxx) - strip first 4 chars and last, then trim
+            // cprformat(xxx) - insert dash after first 6 if length is exactly 10
             var newSofdField = sofdField.Substring(10, sofdField.Length - 11).Trim();
-            var input = GetValue(userId, newSofdField, person, affiliation, orgUnit);
+            var input = GetValue(userId, newSofdField, person, orgUnits, affiliation, orgUnit);
 
             var result = Regex.Replace(input, "^(.{6})(.{4})", "$1-$2", RegexOptions.IgnoreCase);
             return result;
         }
 
+        private static string GetValuePhoneFormat(string userId, string sofdField, Person person, List<OrgUnit> orgUnits, Affiliation affiliation, OrgUnit orgUnit)
+        {
+            // phoneformat(xxx) - format with space between every 2nd digit
+            var newSofdField = sofdField.Substring(12, sofdField.Length - 13).Trim();
+            var input = GetValue(userId, newSofdField, person, orgUnits, affiliation, orgUnit);
+            if (input == null) {
+                return null;
+            }
+            var result = Regex.Replace(Regex.Replace(input, @"\s", ""), @"(\+?\d{2})(?=\d)", "$1 ");
+            return result;
+        }
 
         private static string GetValueStatic(string sofdField)
         {
@@ -418,6 +509,33 @@ namespace Active_Directory
             return null;
         }
 
+        private static string MapMobile(Person person)
+        {
+            if (person.phones != null)
+            {
+                var phone = person.phones.Where(p => p.phoneType.Equals("MOBILE", StringComparison.InvariantCultureIgnoreCase)).OrderByDescending(p => p.typePrime).FirstOrDefault();
+                if (phone != null)
+                {
+                    return phone.phoneNumber;
+                }
+            }
+
+            return null;
+        }
+
+        private static string MapLandline(Person person)
+        {
+            if (person.phones != null)
+            {
+                var phone = person.phones.Where(p => p.phoneType.Equals("LANDLINE", StringComparison.InvariantCultureIgnoreCase)).OrderByDescending(p => p.typePrime).FirstOrDefault();
+                if (phone != null)
+                {
+                    return phone.phoneNumber;
+                }
+            }
+
+            return null;
+        }
 
         private static string MapAuthorizationCode(string sofdField, Person person)
         {

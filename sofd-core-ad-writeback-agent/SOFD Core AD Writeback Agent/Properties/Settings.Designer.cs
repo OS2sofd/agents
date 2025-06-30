@@ -12,7 +12,7 @@ namespace SOFD.Properties {
     
     
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.VisualStudio.Editors.SettingsDesigner.SettingsSingleFileGenerator", "17.8.0.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.VisualStudio.Editors.SettingsDesigner.SettingsSingleFileGenerator", "17.12.0.0")]
     internal sealed partial class Settings : global::System.Configuration.ApplicationSettingsBase {
         
         private static Settings defaultInstance = ((Settings)(global::System.Configuration.ApplicationSettingsBase.Synchronized(new Settings())));
@@ -20,24 +20,6 @@ namespace SOFD.Properties {
         public static Settings Default {
             get {
                 return defaultInstance;
-            }
-        }
-        
-        [global::System.Configuration.ApplicationScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("https://kommune.sofd.io")]
-        public string SofdUrl {
-            get {
-                return ((string)(this["SofdUrl"]));
-            }
-        }
-        
-        [global::System.Configuration.ApplicationScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("xxxx")]
-        public string SofdApiKey {
-            get {
-                return ((string)(this["SofdApiKey"]));
             }
         }
         
@@ -92,15 +74,6 @@ namespace SOFD.Properties {
         public bool ActiveDirectoryEnablePowershell {
             get {
                 return ((bool)(this["ActiveDirectoryEnablePowershell"]));
-            }
-        }
-        
-        [global::System.Configuration.ApplicationScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("True")]
-        public bool ActiveDirectoryManagerUpdateOnlyPrimes {
-            get {
-                return ((bool)(this["ActiveDirectoryManagerUpdateOnlyPrimes"]));
             }
         }
         
@@ -182,6 +155,51 @@ namespace SOFD.Properties {
         public string CyberArkAPI {
             get {
                 return ((string)(this["CyberArkAPI"]));
+            }
+        }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("https://kommune.sofd.io")]
+        public string SofdUrl {
+            get {
+                return ((string)(this["SofdUrl"]));
+            }
+        }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("xxxx")]
+        public string SofdApiKey {
+            get {
+                return ((string)(this["SofdApiKey"]));
+            }
+        }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("True")]
+        public bool ActiveDirectoryManagerUpdateOnlyPrimes {
+            get {
+                return ((bool)(this["ActiveDirectoryManagerUpdateOnlyPrimes"]));
+            }
+        }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool DryRunAttributes {
+            get {
+                return ((bool)(this["DryRunAttributes"]));
+            }
+        }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string ActiveDirectoryWritebackIncludeOUs {
+            get {
+                return ((string)(this["ActiveDirectoryWritebackIncludeOUs"]));
             }
         }
     }

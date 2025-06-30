@@ -1,4 +1,5 @@
 ﻿using RestSharp;
+using Serilog;
 using SOFD_Core.Model;
 using System;
 using System.Collections.Generic;

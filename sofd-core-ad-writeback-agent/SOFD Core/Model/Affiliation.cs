@@ -32,5 +32,11 @@ namespace SOFD_Core.Model
         public string calculatedOrgUnitUuid { get { return !string.IsNullOrWhiteSpace(alternativeOrgUnitUuid) ? alternativeOrgUnitUuid : orgUnitUuid; } }
         public List<string> functions { get; set; }
         public string vendor { get; set; }
+        public string internalReference { get; set; }
+
+        public bool isActiveOrFutureActive() {
+            DateTime.TryParse(stopDate, out var dstopDate);
+            return (stopDate == null || dstopDate.Date >= DateTime.Now.Date);
+        }
     }
 }

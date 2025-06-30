@@ -65,9 +65,9 @@ namespace Active_Directory
 
                     // find an affiliation that matches the employeeId on the user account
                     Affiliation affiliation = null;
-                    if (!string.IsNullOrEmpty(user.employeeId) && person.affiliations != null && person.affiliations.Count > 0)
+                    if (!string.IsNullOrEmpty(user.employeeId) && person.affiliations != null)
                     {
-                        foreach (Affiliation aff in person.affiliations)
+                        foreach (Affiliation aff in person.affiliations.Where(a => a.isActiveOrFutureActive()))
                         {
                             if (string.Equals(aff.employeeId, user.employeeId))
                             {
@@ -142,7 +142,21 @@ namespace Active_Directory
                                         }
                                     }
 
+                                    if (config.ActiveDirectoryWritebackIncludeOUs.Count > 0)
+                                    {
+                                        using (var userOU = de.Parent)
+                                        {
+                                            var ouDN = (string)userOU.Properties["distinguishedName"].Value;
+                                            if (!config.ActiveDirectoryWritebackIncludeOUs.Any(ex => ouDN.Contains(ex.Trim())))
+                                            {
+                                                log.Debug($"Skipping writeback for {user.userId} because user is bot in included OU");
+                                                continue;
+                                            }
+                                        }
+                                    }
+
                                     string newCn = null;
+                                    DirectoryEntry newOU = null;
                                     bool changes = false;
 
                                     foreach (var item in config.map)
@@ -151,7 +165,7 @@ namespace Active_Directory
                                         {
                                             var key = GetKey(item.Key);
                                             string adValue = de.Properties.Contains(key) ? de.Properties[key].Value.ToString() : null;
-                                            string sofdValue = FieldMapper.GetValue(user.userId, item.Value, person, affiliation, orgUnit);
+                                            string sofdValue = FieldMapper.GetValue(user.userId, item.Value, person, orgUnits, affiliation, orgUnit);
 
                                             // Handle special case: initials can only take 6 chars, so skip if more than 7 chars
                                             if ("initials".Equals(key, StringComparison.InvariantCultureIgnoreCase))
@@ -190,9 +204,31 @@ namespace Active_Directory
                                             }
 
                                             // handle special case for commonName
-                                            if (!"cn".Equals(key))
+                                            if ("cn".Equals(key, StringComparison.InvariantCultureIgnoreCase))
                                             {
-
+                                                // if we have a new name for the user, store it here
+                                                if (!string.IsNullOrEmpty(sofdValue) && !object.Equals(sofdValue, adValue))
+                                                {
+                                                    log.Information("Renaming " + user.userId + " to " + sofdValue);
+                                                    newCn = sofdValue;
+                                                }
+                                            }
+                                            // handle special case for OU
+                                            else if ("ou".Equals(key, StringComparison.InvariantCultureIgnoreCase))
+                                            {
+                                                if (!user.disabled)
+                                                {
+                                                    // if we have a new OU for the user, store it here
+                                                    adValue = de.Parent.Properties["DistinguishedName"].Value.ToString();
+                                                    if (!string.IsNullOrEmpty(sofdValue) && !object.Equals(sofdValue, adValue))
+                                                    {
+                                                        newOU = new DirectoryEntry($"LDAP://{sofdValue}");
+                                                        log.Information("Moving " + user.userId + " from " + adValue + " to " + sofdValue);
+                                                    }
+                                                }
+                                            }
+                                            else
+                                            {
                                                 if (string.IsNullOrEmpty(sofdValue))
                                                 {
                                                     if (!string.IsNullOrEmpty(adValue) && ShouldClear(item.Key) && ShouldReplace(item.Key))
@@ -203,20 +239,11 @@ namespace Active_Directory
                                                     }
                                                 }
                                                 // update if values differ, but do not replace values in AD if NOREPLACE is used
-                                                else if (!sofdValue.Equals(adValue) && (String.IsNullOrEmpty(adValue) || ShouldReplace(item.Key) ))
+                                                else if (!sofdValue.Equals(adValue) && (String.IsNullOrEmpty(adValue) || ShouldReplace(item.Key)))
                                                 {
                                                     log.Information("Setting attribute for " + user.userId + ": " + key + "=" + sofdValue);
                                                     de.Properties[key].Value = sofdValue;
                                                     changes = true;
-                                                }
-                                            }
-                                            else
-                                            {
-                                                // if we have a new name for the user, store it here
-                                                if (!string.IsNullOrEmpty(sofdValue) && !object.Equals(sofdValue, adValue))
-                                                {
-                                                    log.Information("Renaming " + user.userId + " to " + sofdValue);
-                                                    newCn = sofdValue;
                                                 }
                                             }
                                         }
@@ -284,20 +311,31 @@ namespace Active_Directory
 
                                     if (changes)
                                     {
-                                        de.CommitChanges();
+                                        if (!config.DryRun)
+                                        {
+                                            de.CommitChanges();
+                                        }
                                     }
 
                                     // has to happen after CommitChanges, otherwise changes will not be committed
-                                    if (newCn != null)
+
+                                    if (!config.DryRun)
                                     {
-                                        de.Rename("cn=" + newCn);
+                                        if (newCn != null)
+                                        {
+                                            de.Rename("cn=" + newCn);
+                                        }
+                                        if (newOU != null)
+                                        {
+                                            de.MoveTo(newOU);
+                                        }
+                                        // invoke custom powershell if any change was made
+                                        if (config.EnablePowershell && changes)
+                                        {
+                                            powershellService.UserChanged(person, user, affiliation, orgUnit);
+                                        }
                                     }
-                                    // invoke custom powershell if any change was made
-                                    if (config.EnablePowershell && changes)
-                                    {
-                                        powershellService.UserChanged(person, user, affiliation, orgUnit);
-                                    }
-                                }                                
+                                }
                             }
                             else
                             {

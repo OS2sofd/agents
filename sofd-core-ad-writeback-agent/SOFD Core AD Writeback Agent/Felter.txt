@@ -19,6 +19,11 @@ direkte attributter (fx sofd="firstname")
 | lastChanged                | Dato for sidste ændring af personen                   |
 | deleted                    | Om personen er slettet                                |
 | personCalculatedName       | ChosenName hvis udfyldt, eller fornavn + efternavn    |
+| calculatedFirstname        | Fornavn fra af ChosenName hvis udfyldt ellers fornavn |
+| calculatedSurname          | Efternavn fra ChosenName hvis udfyldt ellers efternavn|
+| primaryMobile              | Telefonnummeret på den primære mobil                  |
+| primaryLandline            | Telefonnummeret på den primære fastnet nummer         |
+| keyWords                   | Søgeord på personen                                   |
 +----------------------------+-------------------------------------------------------+
 
 post (fx sofd="affiliation.orgUnit.post.street" for enhedens adresse eller sofd="post.street" for medarbejderens hjemmeadresse)
@@ -62,7 +67,7 @@ user (fx sofd="user.userId")
 | kombitUuid                 | Uuid der er registreret på brugeren i FK Organisation |
 | userType                   | Brugertype                                            |
 | employeeId                 | MedarbejderID                                         |
-| prime                      | Primær telefon                                        |
+| prime                      | Angiver om brugeren er den primære bruger             |
 +----------------------------+-------------------------------------------------------+
 
 affiliation (fx sofd="affiliation.stopDate")
@@ -91,8 +96,9 @@ affiliation (fx sofd="affiliation.stopDate")
 | positionShort              | Kort stillingstekst fra OPUS                          |
 | positionDisplayName        | Display stillingstekst                                |
 | positionCalculatedName     | Displaytekst hvis angivet, ellers alm. stillingstekst |
-| functions                  | Liste af ansættelsesfunktioner                        |
-| vendor                     | Leverandør (for eksterne tilhørsforhold)              |
+| functions                  | Liste af ansættelsesfunktioner                       |
+| vendor                     | Leverandør (for eksterne tilhørsforhold)				 |
+| internalReference          | Intern reference 									 |
 +----------------------------+-------------------------------------------------------+
 
 affiliation.orgUnit (fx sofd="affiliation.orgUnit.cvr")

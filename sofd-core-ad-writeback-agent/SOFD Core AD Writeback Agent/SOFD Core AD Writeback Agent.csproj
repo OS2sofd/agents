@@ -163,6 +163,9 @@
     </None>
   </ItemGroup>
   <ItemGroup>
+    <Content Include="AttributeWriteback\ad-mapping-eksempler.xml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
     <Content Include="AttributeWriteback\ad-mapping.xml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
